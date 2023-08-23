@@ -1,21 +1,32 @@
 import sys
-
 sys.dont_write_bytecode = True
-import io
-import sqlite3
-import json
-from jsonschema import validate, exceptions
-import roblox
-import asyncio
 import discord
-import discord.ext
-from typing import Literal, Optional
-from discord import app_commands
-import datetime
+from discord import ui
+from colorama import Back, Fore, Style
+import time
+import json
+import platform
+import requests
+import importlib
 import discord.ext
 from discord.ext import commands
-
+import traceback
+from datetime import UTC
+from urllib.parse import quote_plus
+from discord import app_commands
+from datetime import datetime, timedelta
+from pytz import timezone
 import os
+from datetime import datetime
+import datetime
+import logging
+import sqlite3
+import discord
+import glob
+import string
+import random
+import asyncio
+from jishaku import Jishaku
 #
 
 
@@ -25,21 +36,27 @@ class BLERP(commands.Bot):
         super().__init__(command_prefix=commands.when_mentioned_or("$"), intents=intents)
 
         self.cogslist = ["Cogs.Commands.Config.config"]
+
     async def load_jishaku(self):
         await self.wait_until_ready()
         await self.load_extension('jishaku')
 
-    async def on_ready(self):
+    async def setup_hook(self):
+        self.loop.create_task(self.load_jishaku()) # Load Jishaku in the background
 
-        print(f'Logged in as {self.user} (ID: {self.user.id})')
-        print('------')
-        
-        await self.tree.sync()
 
         for ext in self.cogslist:
             await self.load_extension(ext)
-            
-        await self.load_jishaku()
+
+    async def on_ready(self):
+        prfx = (Back.BLACK + Fore.GREEN + time.strftime("%H:%M:%S GMT", time.gmtime()) + Back.RESET + Fore.WHITE + Style.BRIGHT)
+        print(prfx + " Logged in as " + Fore.YELLOW + self.user.name)
+        print(prfx + " Bot ID " + Fore.YELLOW + str(self.user.id))
+        print(prfx + " Discord Version " + Fore.YELLOW + discord.__version__)
+        synced = await self.tree.sync()
+        await self.tree.sync()
+        print(prfx + " Slash CMD Synced " + Fore.YELLOW + str(len(synced)) + " Commands")
+        print(prfx + " Bot is in " + Fore.YELLOW + str(len(self.guilds)) + " servers")
 
     
     async def on_connect(self):
@@ -58,37 +75,7 @@ client.setup_hook()
     
 
     
-@client.command()
-@commands.guild_only()
-@commands.is_owner()
-async def sync(ctx: commands.Context, guilds: commands.Greedy[discord.Object], spec: Optional[Literal["~", "*", "^"]] = None) -> None:
-    if not guilds:
-        if spec == "~":
-            synced = await ctx.bot.tree.sync(guild=ctx.guild)
-        elif spec == "*":
-            ctx.bot.tree.copy_global_to(guild=ctx.guild)
-            synced = await ctx.bot.tree.sync(guild=ctx.guild)
-        elif spec == "^":
-            ctx.bot.tree.clear_commands(guild=ctx.guild)
-            await ctx.bot.tree.sync(guild=ctx.guild)
-            synced = []
-        else:
-            synced = await ctx.bot.tree.sync()
 
-        await ctx.send(
-            f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}"
-        )
-        return
 
-    ret = 0
-    for guild in guilds:
-        try:
-            await ctx.bot.tree.sync(guild=guild)
-        except discord.HTTPException:
-            pass
-        else:
-            ret += 1
-
-    await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
 client.run("MTExMTkyNjY2MDc4NzM1MTU5Mw.GRH5Xp.uFLFe82ekJnmL2MUeQXKg7x6TUGfWTzF1brBqM")
 

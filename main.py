@@ -28,7 +28,7 @@ import random
 import asyncio
 from jishaku import Jishaku
 #
-
+#print("hi")
 
 class BLERP(commands.Bot):
     def __init__(self):

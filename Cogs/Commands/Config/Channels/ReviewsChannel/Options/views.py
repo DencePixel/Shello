@@ -15,7 +15,7 @@ import string
 from Cogs.Commands.Config.Channels.Options.views import ChannelModuleSelect
 
 
-class gi(discord.ui.Select):
+class ReviewChannel(discord.ui.Select):
     def __init__(self, interaction):
         self.interaction = interaction
         options = [

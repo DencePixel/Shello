@@ -14,6 +14,7 @@ import io
 import string
 from Cogs.Commands.Config.Channels.DesignLog.views import DesignLogChannel
 from Cogs.Commands.Config.Channels.Options.views import *
+from Cogs.Commands.Config.Permissions.Options.views import *
 
 
 class ModuleSelect(discord.ui.Select):
@@ -21,7 +22,7 @@ class ModuleSelect(discord.ui.Select):
         self.interaction = interaction
         options = [
             discord.SelectOption(label=f"Channels", value="channels"),
-            discord.SelectOption(label=f"Role Permissions", value="Reviews")
+            discord.SelectOption(label=f"Role Permissions", value="roles")
         ]
         super().__init__(placeholder='Select what module to configure.', options=options)
 
@@ -36,3 +37,10 @@ class ModuleSelect(discord.ui.Select):
             channel_dropdown_view.add_item(channel_dropdown)
             embed = discord.Embed(description=f"Please select a channel to configure!", color=discord.Color.dark_embed())
             await interaction.response.send_message(embed=embed, view=channel_dropdown_view)
+            
+        elif self.values[0] == "roles":
+            role_dropdown = RoleModuleSelect(self.interaction)
+            role_dropdown_view = discord.ui.View()
+            role_dropdown_view.add_item(role_dropdown)
+            embed = discord.Embed(description=f"Please select a permission to configure!", color=discord.Color.dark_embed())
+            await interaction.response.send_message(embed=embed, view=role_dropdown_view)

@@ -40,6 +40,7 @@ class PaymentCog(commands.Cog):
         self.payment_config = self.payment_db["Payment Config"]
         self.design_Db = self.cluster["PaymentLinkSystem"]
         self.design_config = self.design_Db["Payment Config"]
+        #
 
     async def fetch_payment_links(self, guild_id):
         existing_record = self.payment_config.find_one({"guild_id": guild_id})

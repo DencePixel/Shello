@@ -17,7 +17,7 @@ from urllib.parse import quote_plus
 from discord import app_commands
 from datetime import datetime, timedelta
 from pytz import timezone
-from markination import DropdownPaginator
+from Cogs.Utils.paginator import Simple
 import os
 from datetime import datetime
 
@@ -35,8 +35,7 @@ class SHELLO(commands.Bot):
                          "Cogs.Events.error",
                          "Cogs.Events.Join",
                          "Cogs.Master.Servers",
-                         "Cogs.Commands.Priority.payment",
-                         "Cogs.Master.ipc"]
+                         "Cogs.Commands.Priority.payment"]
     async def load_jishaku(self):
         await self.wait_until_ready()
         await self.load_extension('jishaku')
@@ -154,7 +153,15 @@ async def j(ctx):
     await message.edit(view=view, content=None)
 
 
+@client.command()
+async def paginator(ctx: commands.Context):
+    # A list of embeds to paginate
+    embeds = [discord.Embed(title="First embed"),         
+            discord.Embed(title="Second embed"),
+            discord.Embed(title="Third embed")]
 
+    # Start the paginator
+    await Simple().start(ctx, pages=embeds)
 
             
 client.run("MTA2ODI2MTc0NTg2NjU3NTk4Mg.GR-yiu.mAbiydsvZP80r-f7uX06cyEp7e4LBHe9kut0KE")

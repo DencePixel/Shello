@@ -5,3 +5,6 @@ typing
 requests
 asyncio
 pymongo
+discord.ext.ipc
+ro.py
+#

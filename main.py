@@ -2,23 +2,15 @@ import sys
 sys.dont_write_bytecode = True
 import discord
 from discord import ui
-from colorama import Back, Fore, Style
-import time
 from pymongo import MongoClient
 from utils import replace_variable_welcome
-import platform
-import requests
-import importlib
 import discord.ext
 from discord.ext import commands
-import traceback
 from datetime import UTC
-from urllib.parse import quote_plus
 from discord import app_commands
 from datetime import datetime, timedelta
 from pytz import timezone
 from Cogs.Utils.paginator import Simple
-import os
 from datetime import datetime
 
 import discord
@@ -137,7 +129,7 @@ class PasswordView(discord.ui.View):
     async def reset_callback(self, interaction: discord.Interaction):
         current_entry.clear()
         await interaction.response.defer()
-        self.password_entered = False  # Reset the password state
+        self.password_entered = False 
         updated_view = PasswordView(message=self.message)
         await self.message.edit(view=updated_view)
 
@@ -153,15 +145,6 @@ async def j(ctx):
     await message.edit(view=view, content=None)
 
 
-@client.command()
-async def paginator(ctx: commands.Context):
-    # A list of embeds to paginate
-    embeds = [discord.Embed(title="First embed"),         
-            discord.Embed(title="Second embed"),
-            discord.Embed(title="Third embed")]
-
-    # Start the paginator
-    await Simple().start(ctx, pages=embeds)
 
             
 client.run("MTA2ODI2MTc0NTg2NjU3NTk4Mg.GR-yiu.mAbiydsvZP80r-f7uX06cyEp7e4LBHe9kut0KE")

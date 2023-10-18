@@ -26,7 +26,8 @@ class SHELLO(commands.Bot):
                          "Cogs.Events.error",
                          "Cogs.Events.Join",
                          "Cogs.Master.Servers",
-                         "Cogs.Commands.Priority.payment"]
+                         "Cogs.Commands.Priority.design",
+                         "Cogs.Commands.Utils.routes"]
     async def load_jishaku(self):
         await self.wait_until_ready()
         await self.load_extension('jishaku')

@@ -1,2 +1,7 @@
-discord
+discord.py
+jishaku
 datetime
+typing
+requests
+asyncio
+pymongo

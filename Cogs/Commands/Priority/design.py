@@ -54,7 +54,7 @@ class PaymentCog(commands.Cog):
         existing_record = self.design_config.find_one({"guild_id": guild_id})
         return existing_record
 
-    @commands.hybrid_group(name="payment", description=f"Payment based commands")
+    @commands.hybrid_group(name="design", description=f"Design based commands")
     async def design(self, ctx):
         pass
 
@@ -67,7 +67,7 @@ class PaymentCog(commands.Cog):
             return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you must specify a link.")
 
         if not existing_record:
-            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you need to set up the design module. (No Ex record)")
+            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you need to set up the design module. ")
 
         designer_log_channel_id = existing_record.get("designer_log_channel_id")
         print(f"Design Log Channel: {designer_log_channel_id}")

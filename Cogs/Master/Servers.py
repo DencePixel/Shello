@@ -30,9 +30,8 @@ class Servers(commands.Cog):
             if shello_role:
                 if shello_role in ctx.author.roles:
                     await ctx.message.delete()
-                    embed = discord.Embed(title="Congratulations!", description="Thank you for purchasing Shello, at any time if the bot is removed please just add it back!", color=discord.Color.green())
+                    embed = discord.Embed(title="Congratulations!", description="Thank you for using shello, at any time if the bot is removed please just add it back!", color=discord.Color.green())
                     log_embed = discord.Embed(description=f"``Server: `` {server_id}", color=discord.Color.dark_embed())
-                    log_embed.set_footer(text="Another purchase!")
                     log_embed.set_author(name="Shello", icon_url=ctx.author.display_avatar.url)
                     channel = shello_guild.get_channel(1158103780445917304)
 

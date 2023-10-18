@@ -1,20 +1,14 @@
 from discord import app_commands
 from discord import Color
-import discord
 from discord.ext import commands
 import discord.ext
-import roblox
 from roblox import Client
 from discord import app_commands
 from discord import Color
 import discord
 from discord.ext import commands
 import discord.ext
-import random
-import datetime
-import aiohttp
 from datetime import timedelta
-import json
 from pymongo import MongoClient
 from Cogs.Commands.Config.view import SelectView
 from Cogs.emojis import approved_emoji, denied_emoji

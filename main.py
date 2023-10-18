@@ -6,7 +6,6 @@ from pymongo import MongoClient
 from utils import replace_variable_welcome
 import discord.ext
 from discord.ext import commands
-from datetime import UTC
 from discord import app_commands
 from datetime import datetime, timedelta
 from pytz import timezone

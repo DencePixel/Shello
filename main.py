@@ -27,7 +27,8 @@ class SHELLO(commands.Bot):
                          "Cogs.Events.Join",
                          "Cogs.Master.Servers",
                          "Cogs.Commands.Priority.design",
-                         "Cogs.Commands.Utils.routes"]
+                         "Cogs.Utils.routes",
+                         "Cogs.Commands.Roblox.link"]
     async def load_jishaku(self):
         await self.wait_until_ready()
         await self.load_extension('jishaku')

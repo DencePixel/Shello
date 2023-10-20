@@ -60,8 +60,6 @@ class PaymentCog(commands.Cog):
             return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you need to set up the design module. ")
 
         designer_log_channel_id = existing_record.get("designer_log_channel_id")
-        print(f"Design Log Channel: {designer_log_channel_id}")
-        print(f"Designer Role: {designer_role_id}")
         designer_role_id = self.design_config.find("designer_role_id")
         
         

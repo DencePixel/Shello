@@ -9,6 +9,11 @@ import discord
 from discord.ext import commands
 import discord.ext
 from pymongo import MongoClient
+from Cogs.DataModels.guild import BaseGuild
+from Cogs.DataModels.user import BaseUser
+
+Base_User = BaseUser()
+Base_Guild = BaseGuild()
 
 
 
@@ -28,21 +33,10 @@ class PaymentCog(commands.Cog):
         self.cluster = MongoClient("mongodb+srv://markapi:6U9wkY5D7Hat4OnG@shello.ecmhytn.mongodb.net/")
         self.payment_db = self.cluster["PaymentLinkSystem"]
         self.payment_config = self.payment_db["Payment Config"]
-        self.design_Db = self.cluster["PaymentLinkSystem"]
-        self.design_config = self.design_Db["Payment Config"]
+        self.design_Db = self.cluster["DesignSystem"]
+        self.design_config = self.design_Db["design config"]
 
-    async def fetch_payment_links(self, guild_id):
-        existing_record = self.payment_config.find_one({"guild_id": guild_id})
 
-        if existing_record:
-            links = existing_record.get("links", {})
-            return [f"{name}" for name, link in links.items()]
-        else:
-            return []
-
-    async def fetch_design_config(self, guild_id):
-        existing_record = self.design_config.find_one({"guild_id": guild_id})
-        return existing_record
 
     @commands.hybrid_group(name="design", description=f"Design based commands")
     async def design(self, ctx):
@@ -58,9 +52,9 @@ class PaymentCog(commands.Cog):
 
         if not existing_record:
             return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you need to set up the design module. ")
+        
+        designer_role_id, designer_log_channel_id = await Base_Guild.fetch_design_config(ctx.guild.id)
 
-        designer_log_channel_id = existing_record.get("designer_log_channel_id")
-        designer_role_id = self.design_config.find("designer_role_id")
         
         
         designer_channel = self.client.get_channel(designer_log_channel_id)
@@ -100,7 +94,7 @@ class PaymentCog(commands.Cog):
     @designlog.autocomplete('link')
     async def autocomplete_callback(self, interaction: discord.Interaction, current: str):
         guild_id = interaction.guild.id
-        payment_links = await self.fetch_payment_links(guild_id)
+        payment_links = await Base_Guild.fetch_payment_links(guild_id)
 
         choices = [
             app_commands.Choice(name=link, value=link) for link in payment_links if current.lower() in link.lower()

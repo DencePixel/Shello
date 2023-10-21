@@ -4,10 +4,13 @@ from roblox import Client
 client = Client()
 
 class BaseUser:
+    """
+    Base class for a user Object. 
+    """
     def __init__(self):
         self.mongo_uri = "mongodb+srv://markapi:6U9wkY5D7Hat4OnG@shello.ecmhytn.mongodb.net/"
 
-    def get_linked_roblox(self, user_id):
+    async def fetch_roblox_account(self, user_id):
         """
         Retrieve the Roblox user ID associated with the provided Discord user ID.
         """

@@ -8,6 +8,8 @@ import discord.ext
 from discord.ext import commands
 from discord import app_commands
 from datetime import datetime, timedelta
+import sentry_sdk
+import random
 from pytz import timezone
 from Cogs.Utils.paginator import Simple
 from datetime import datetime
@@ -146,7 +148,15 @@ async def j(ctx):
     await message.edit(view=view, content=None)
 
 
+import sentry_sdk
 
-            
+sentry_sdk.init(
+    dsn="https://1a90569261e501548c0245a329358d6a@o4506088277344256.ingest.sentry.io/4506088281276416",
+
+    traces_sample_rate=1.0,
+
+    profiles_sample_rate=1.0,
+)
+        
 client.run("MTA2ODI2MTc0NTg2NjU3NTk4Mg.GR-yiu.mAbiydsvZP80r-f7uX06cyEp7e4LBHe9kut0KE")
 

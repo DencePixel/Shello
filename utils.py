@@ -14,7 +14,3 @@ async def replace_variable_welcome(message, replacements):
     for placeholder, value in replacements.items():
         message = message.replace(placeholder, value)
     return message
-
-
-
-

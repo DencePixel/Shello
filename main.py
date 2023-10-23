@@ -89,11 +89,11 @@ class SHELLO(commands.AutoShardedBot):
     async def on_disconnect(self):
         logging.info("Disconnected from Discord Gateway")
 
-sentry_sdk.init(
-    dsn=os.getenv("SENTRY_DSN"),
-    traces_sample_rate=1.0,
-    profiles_sample_rate=1.0
-)
+#sentry_sdk.init(
+   #dsn=os.getenv("SENTRY_DSN"),
+    #traces_sample_rate=1.0,
+    #profiles_sample_rate=1.0
+#)
 
 async def run_function(token):
     client = SHELLO()

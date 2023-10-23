@@ -1,9 +1,16 @@
 import pymongo
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+mongo_uri = os.getenv("MONGO_URI")
 
 class BaseGuild:
+    """
+    Base class for a guild Object. 
+    """
     def __init__(self):
-        self.mongo_uri = "mongodb+srv://markapi:6U9wkY5D7Hat4OnG@shello.ecmhytn.mongodb.net/"
-        self.cluster = pymongo.MongoClient(self.mongo_uri)
+        self.cluster = pymongo.MongoClient(mongo_uri)
 
         
     async def fetch_design_config(self, guild_id):
@@ -13,8 +20,8 @@ class BaseGuild:
         Returns either the values or False
         """
         try:
-            db = self.cluster["DesignSystem"]
-            design_config = db["design config"]
+            db = self.cluster[os.getenv("DESIGN_DB")]
+            design_config = db[os.getenv("DESIGN_COLLECTION")]
 
             guild_id = int(guild_id)
 
@@ -36,8 +43,8 @@ class BaseGuild:
         
         Returns either the values or a placeholder
         """
-        self.payment_db = self.cluster["PaymentLinkSystem"]
-        self.payment_config = self.payment_db["Payment Config"]
+        self.payment_db = self.cluster[os.getenv("PAYMENT_DB")]
+        self.payment_config = self.payment_db[os.getenv("PAYMENT_COLLECTION")]
         existing_record = self.payment_config.find_one({"guild_id": guild_id})
 
         if existing_record:
@@ -46,23 +53,12 @@ class BaseGuild:
         else:
             return ["No payment links exist"]
         
-    async def guild_is_blacklisted(self, guild_id):
+    async def update_design_logs(self, guild_id, data):
         """
-        Function for checking if a guild is blacklisted
+        Function to update design logs for the guild
         
-        Returns a boolean
+        Returns a boolean dependant on if it suceeded or not
         """
-        self.Master = self.cluster["Master"]
-        self.Blacklists = self.Master["Blacklists"]
-        existing_record = self.Blacklists.find_one({"guild_id": guild_id})
-        
-        if existing_record:
-            return True
-        elif not existing_record:
-            return False
-        
-        else:
-            return False
-        
+        pass
         
         

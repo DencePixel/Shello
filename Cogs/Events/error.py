@@ -3,6 +3,7 @@ import random
 from discord import Embed
 from discord.ext import commands
 from Cogs.emojis import *
+import aiohttp
 
 class nocmd(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -25,7 +26,7 @@ class nocmd(commands.Cog):
         await interaction.response.send_message(embed=embed)
         developer_Embed = discord.Embed(description=f"```py\n{error}```")
         developer_Embed.set_footer(text=f"Error ID: {error_id}")
-        channel = self.client.get_channel(1163097406666199100)
+        channel = self.client.get_channel(1160174340218822718)
         await channel.send(content=error_id, embed=embed)
             
         

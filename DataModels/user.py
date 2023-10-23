@@ -1,22 +1,24 @@
-from pymongo import MongoClient
-from roblox import Client
+import pymongo
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
-client = Client()
+mongo_uri = os.getenv("MONGO_URI")
+
 
 class BaseUser:
     """
     Base class for a user Object. 
     """
     def __init__(self):
-        self.mongo_uri = "mongodb+srv://markapi:6U9wkY5D7Hat4OnG@shello.ecmhytn.mongodb.net/"
+        self.mongo_uri = mongo_uri
 
     async def fetch_roblox_account(self, user_id):
         """
         Retrieve the Roblox user ID associated with the provided Discord user ID.
         """
         
-        self.mongo_uri = "mongodb+srv://markapi:6U9wkY5D7Hat4OnG@shello.ecmhytn.mongodb.net/"
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = pymongo.MongoClient(self.mongo_uri)
         self.db = self.cluster["Roblox"]
         self.roblox_accounts = self.db["accounts"]
         self.user_id = str(user_id) 

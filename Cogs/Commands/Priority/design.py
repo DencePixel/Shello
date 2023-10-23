@@ -1,16 +1,15 @@
-from discord import app_commands
-from discord import Color
-import discord
 from discord.ext import commands
 import discord.ext
 from discord import app_commands
 from discord import Color
 import discord
-from discord.ext import commands
-import discord.ext
 from pymongo import MongoClient
-from Cogs.DataModels.guild import BaseGuild
-from Cogs.DataModels.user import BaseUser
+from DataModels.guild import BaseGuild
+import os
+from DataModels.user import BaseUser
+from dotenv import load_dotenv
+load_dotenv()
+
 
 Base_User = BaseUser()
 Base_Guild = BaseGuild()
@@ -27,12 +26,12 @@ Base_Guild = BaseGuild()
         
 
     
-class PaymentCog(commands.Cog):
+class DesignCog(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-        self.cluster = MongoClient("mongodb+srv://markapi:6U9wkY5D7Hat4OnG@shello.ecmhytn.mongodb.net/")
-        self.payment_db = self.cluster["PaymentLinkSystem"]
-        self.payment_config = self.payment_db["Payment Config"]
+        self.cluster = MongoClient(os.getenv("MONGO_URI"))
+        self.payment_db = self.cluster[os.getenv("PAYMENT_DB")]
+        self.payment_config = self.payment_db[os.getenv("PAYMENT_COLLECTION")]
         self.design_Db = self.cluster["DesignSystem"]
         self.design_config = self.design_Db["design config"]
 
@@ -113,4 +112,4 @@ class PaymentCog(commands.Cog):
     
 
 async def setup(client: commands.Bot) -> None:
-    await client.add_cog(PaymentCog(client))
+    await client.add_cog(DesignCog(client))

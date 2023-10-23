@@ -4,7 +4,6 @@ import discord
 from discord.ext import commands, ipc
 from discord.ext.ipc.objects import ClientPayload
 from discord.ext.ipc.server import Server
-import sqlite3
 
 import pymongo
 

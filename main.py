@@ -3,160 +3,127 @@ sys.dont_write_bytecode = True
 import discord
 from discord import ui
 from pymongo import MongoClient
-from utils import replace_variable_welcome
 import discord.ext
 from discord.ext import commands
-from discord import app_commands
+from discord import app_commands, Webhook
+import asyncio
+import aiohttp
 from datetime import datetime, timedelta
 import sentry_sdk
-import random
 from pytz import timezone
-from Cogs.Utils.paginator import Simple
-from datetime import datetime
+import datetime
+import pymongo
+import os
+import logging
+from dotenv import load_dotenv
+load_dotenv()
+
+# Initialize logging
+logging.basicConfig(
+    level=logging.INFO,  # Change to the desired logging level (e.g., logging.INFO or logging.ERROR)
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler('bot.log'),
+        logging.StreamHandler()
+    ]
+)
 
 import discord
 
 from jishaku import Jishaku
 
-
-class SHELLO(commands.Bot):
+class SHELLO(commands.AutoShardedBot):
     def __init__(self):
+
         intents = discord.Intents().all()
-        super().__init__(command_prefix=commands.when_mentioned_or("t$"), intents=intents)
+        super().__init__(
+            command_prefix=commands.when_mentioned_or("$$"),
+            intents=intents,
+            shard_count=shard_count  # Set the number of shards here
+        )
 
         self.cogslist = ["Cogs.Commands.setup",
                          "Cogs.Events.error",
                          "Cogs.Events.Join",
                          "Cogs.Master.Servers",
                          "Cogs.Commands.Priority.design",
-                         "Cogs.Utils.routes",
+                         "Utils.routes",
                          "Cogs.Commands.Roblox.link"]
+
     async def load_jishaku(self):
         await self.wait_until_ready()
         await self.load_extension('jishaku')
 
+    async def setup_hook(self):
+        pass
+
     async def on_ready(self):
+        logging.info(f'Logged in as {self.user} (ID: {self.user.id})')
 
-        print(f'Logged in as {self.user} (ID: {self.user.id})')
-        print('------')
-
-        await self.tree.sync()
 
         for ext in self.cogslist:
-            await self.load_extension(ext)
-            print(f"Cog {ext} loaded")
-            
+            if ext != "Utils.routes":
+                try:
+                    await self.load_extension(ext)
+                    logging.info(f"Cog {ext} acknowledged")
+                except Exception as e:
+                    logging.error(f"Error loading cog {ext}: {e}")
+                        
+            if ext == "Utils.routes":
+                if os.getenv("ENVIORMENT").lower() == "production":
+                    logging.info("IPC Cog loaded. Reason: Production ENV")
+                    await self.load_extension(ext)
+                if os.getenv("ENVIORMENT").lower() == "development":
+                    logging.info("IPC Cog not loaded. Reason: Development ENV")
+
+
+                        
+
         await self.load_jishaku()
 
-    
     async def on_connect(self):
-        activity2 = discord.Activity(type=discord.ActivityType.watching, name=f"Near Release!")
-        print("Connected to Discord Gateway!")
+        activity2 = discord.Activity(type=discord.ActivityType.watching, name="Near Release!")
+        logging.info("Connected to Discord Gateway!")
         await self.change_presence(activity=activity2)
 
     async def on_disconnect(self):
-        print("Disconnected from Discord Gateway!")
-
-
-
-client = SHELLO()
-client.setup_hook()
-
-import discord
-
-correct_password = [3, 7, 6]
-current_entry = []
-
-class PasswordView(discord.ui.View):
-    def __init__(self, message):
-        super().__init__()
-        self.message = message
-        self.password_entered = False 
-
-        for i in range(1, 10):
-            button = discord.ui.Button(
-                style=discord.ButtonStyle.primary,
-                label=str(i),
-                custom_id=f"button_{i}"
-            )
-            button.callback = self.button_callback
-            self.add_item(button)
-
-        check_button = discord.ui.Button(
-            style=discord.ButtonStyle.success,
-            label="Check",
-            custom_id="button_check"
-        )
-        check_button.callback = self.check_callback
-        self.add_item(check_button)
-
-        reset_button = discord.ui.Button(
-            style=discord.ButtonStyle.danger,
-            label="Reset",
-            custom_id="button_reset"
-        )
-        reset_button.callback = self.reset_callback
-        self.add_item(reset_button)
-
-        cancel_button = discord.ui.Button(
-            style=discord.ButtonStyle.danger,
-            label="Cancel",
-            custom_id="button_cancel",
-            disabled=False  
-        )
-        cancel_button.callback = self.cancel_callback
-        self.add_item(cancel_button)
-
-    async def button_callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        custom_id = interaction.data["custom_id"]
-        number = int(custom_id.split("_")[1])
-        current_entry.append(number)
-
-    async def check_callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        if self.password_entered:
-            return
-        
-        if current_entry == correct_password:
-            self.password_entered = True 
-            for item in self.children:
-                if isinstance(item, discord.ui.Button) and item.custom_id != "button_reset" and item.custom_id != "button_cancel":
-                    item.disabled = True
-            current_entry.clear()
-            await self.message.edit(content="Password Correct!", view=self)
-        else:
-            await self.message.edit(content="Password Incorrect")
-            current_entry.clear()
-
-    async def reset_callback(self, interaction: discord.Interaction):
-        current_entry.clear()
-        await interaction.response.defer()
-        self.password_entered = False 
-        updated_view = PasswordView(message=self.message)
-        await self.message.edit(view=updated_view)
-
-    async def cancel_callback(self, interaction: discord.Interaction):
-        current_entry.clear()
-        await interaction.response.defer()
-        await self.message.edit(content="Finished.", view=None, embed=None)
-
-@client.command()
-async def j(ctx):
-    message = await ctx.send(f"Password Entry:")
-    view = PasswordView(message=message)
-    await message.edit(view=view, content=None)
-
-
-import sentry_sdk
+        logging.info("Disconnected from Discord Gateway")
 
 sentry_sdk.init(
-    dsn="https://1a90569261e501548c0245a329358d6a@o4506088277344256.ingest.sentry.io/4506088281276416",
-
+    dsn=os.getenv("SENTRY_DSN"),
     traces_sample_rate=1.0,
-
-    profiles_sample_rate=1.0,
+    profiles_sample_rate=1.0
 )
-        
-client.run("MTA2ODI2MTc0NTg2NjU3NTk4Mg.GR-yiu.mAbiydsvZP80r-f7uX06cyEp7e4LBHe9kut0KE")
 
+async def run_function(token):
+    client = SHELLO()
+    await client.setup_hook()
+    await client.start(token=TOKEN)
+
+def check_env_variables():
+    load_dotenv()
+
+    missing_variables = []
+
+    for variable_name in os.environ:
+        if not os.getenv(variable_name):
+            missing_variables.append(variable_name)
+
+    if missing_variables:
+        logging.error(f"Missing environment variables: {', '.join(missing_variables)}")
+        raise EnvironmentError("One or more required environment variables are missing. Check the .env file.")
+
+if __name__ == "__main__":
+    check_env_variables()
+
+    try:
+        shard_count = int(os.getenv("SHARD_COUNT", 1))  # Use 1 as the default value if the environment variable is missing
+    except ValueError:
+        shard_count = 1
+        logging.error(f"Incorrect value for shards. Automatically set to {shard_count}")
+    if os.getenv("ENVIORMENT").lower() == "production" or os.getenv("ENVIORMENT").lower() == "development":
+        TOKEN = os.getenv("PRODUCTION_BOT_TOKEN" if os.getenv("ENVIORMENT") == "production" else "DEVELOPMENT_BOT_TOKEN")
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(run_function(token=TOKEN))
+    else:
+        logging.error("Invalid environment option. Please either use development or production.")

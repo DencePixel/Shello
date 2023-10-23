@@ -7,4 +7,5 @@ asyncio
 pymongo
 better-ipc
 roblox
+sentry_sdk
 #

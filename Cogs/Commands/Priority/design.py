@@ -32,8 +32,8 @@ class DesignCog(commands.Cog):
         self.cluster = MongoClient(os.getenv("MONGO_URI"))
         self.payment_db = self.cluster[os.getenv("PAYMENT_DB")]
         self.payment_config = self.payment_db[os.getenv("PAYMENT_COLLECTION")]
-        self.design_Db = self.cluster["DesignSystem"]
-        self.design_config = self.design_Db["design config"]
+        self.design_Db = self.cluster[os.getenv("DESIGN_DB")]
+        self.design_config = self.design_Db[os.getenv("DESIGN_COLLECTION")]
 
 
 

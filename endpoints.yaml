@@ -1,0 +1,13 @@
+discord:
+  base_url: https://discord.com/api/v10/
+  user_info: users/{user_id}
+  guild_info: guilds/{guild_id}
+  channel_info: channels/{channel_id}
+  invite_info: invites/{invite_code}
+  
+roblox:
+  base_url: https://api.roblox.com/
+  user_info: users/{user_id}
+  group_info: groups/{group_id}
+  asset_info: asset/{asset_id}
+  game_info: games/{game_id}

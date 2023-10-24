@@ -9,7 +9,6 @@ from discord import app_commands, Webhook
 import asyncio
 import aiohttp
 from datetime import datetime, timedelta
-import sentry_sdk
 from pytz import timezone
 import datetime
 import pymongo

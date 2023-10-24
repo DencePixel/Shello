@@ -86,3 +86,19 @@ ModuleNotFoundError: No module named 'Cogs.Utils'
 2023-10-23 09:55:13,008 [INFO] Cog Cogs.Commands.Priority.design acknowledged
 2023-10-23 09:55:13,009 [INFO] IPC Cog not loaded. Reason: Development ENV
 2023-10-23 09:55:13,425 [INFO] Cog Cogs.Commands.Roblox.link acknowledged
+2023-10-23 18:05:25,682 [INFO] logging in using static token
+2023-10-23 18:05:27,078 [INFO] Shard ID 0 has connected to Gateway (Session ID: e739a1f8da91610d91012cee6518ebd0).
+2023-10-23 18:05:27,078 [INFO] Connected to Discord Gateway!
+2023-10-23 18:05:32,279 [INFO] Shard ID 1 has connected to Gateway (Session ID: ebe044b62418abe53b25f8ec1bbd5011).
+2023-10-23 18:05:32,279 [INFO] Connected to Discord Gateway!
+2023-10-23 18:05:34,298 [INFO] Logged in as Shello#0958 (ID: 1068261745866575982)
+2023-10-23 18:05:35,067 [INFO] Cog Cogs.Commands.setup acknowledged
+2023-10-23 18:05:35,070 [INFO] Cog Cogs.Events.error acknowledged
+2023-10-23 18:05:35,156 [INFO] Cog Cogs.Events.Join acknowledged
+2023-10-23 18:05:35,157 [ERROR] Error loading cog Cogs.Master.Servers: No module named 'Cogs.Master'
+2023-10-23 18:05:35,729 [INFO] Cog Cogs.Commands.Priority.design acknowledged
+2023-10-23 18:05:35,729 [INFO] IPC Cog loaded. Reason: Production ENV
+2023-10-23 18:05:35,995 [INFO] server listening on 0.0.0.0:5000
+2023-10-23 18:05:36,020 [INFO] server listening on 0.0.0.0:5001
+2023-10-23 18:05:36,844 [INFO] Cog Cogs.Commands.Roblox.link acknowledged
+2023-10-23 21:29:14,287 [INFO] logging in using static token

@@ -18,9 +18,8 @@ import logging
 from dotenv import load_dotenv
 load_dotenv()
 
-# Initialize logging
 logging.basicConfig(
-    level=logging.INFO,  # Change to the desired logging level (e.g., logging.INFO or logging.ERROR)
+    level=logging.INFO,  
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[
         logging.FileHandler('bot.log'),
@@ -39,16 +38,28 @@ class SHELLO(commands.AutoShardedBot):
         super().__init__(
             command_prefix=commands.when_mentioned_or("$$"),
             intents=intents,
-            shard_count=shard_count  # Set the number of shards here
+            shard_count=shard_count  
         )
 
         self.cogslist = ["Cogs.Commands.setup",
                          "Cogs.Events.error",
                          "Cogs.Events.Join",
-                         "Cogs.Master.Servers",
                          "Cogs.Commands.Priority.design",
                          "Utils.routes",
                          "Cogs.Commands.Roblox.link"]
+        
+    async def is_owner(self, user: discord.User):
+        if user.id in [
+            856971748549197865, # Mark
+            795743076520820776, # Bugsy
+            1084114233429598308, # Marks alt
+            
+
+
+        ]:
+            return True
+
+        return await super().is_owner(user)
 
     async def load_jishaku(self):
         await self.wait_until_ready()
@@ -89,11 +100,7 @@ class SHELLO(commands.AutoShardedBot):
     async def on_disconnect(self):
         logging.info("Disconnected from Discord Gateway")
 
-#sentry_sdk.init(
-   #dsn=os.getenv("SENTRY_DSN"),
-    #traces_sample_rate=1.0,
-    #profiles_sample_rate=1.0
-#)
+
 
 async def run_function(token):
     client = SHELLO()

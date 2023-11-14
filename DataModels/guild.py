@@ -1,16 +1,25 @@
 import pymongo
 import os
 from dotenv import load_dotenv
+from Util.Yaml import Load_yaml
 load_dotenv()
 
-mongo_uri = os.getenv("MONGO_URI")
 
 class BaseGuild:
     """
     Base class for a guild Object. 
     """
     def __init__(self):
-        self.cluster = pymongo.MongoClient(mongo_uri)
+        self.config = None
+        self.mongo_uri = None
+        
+    async def initialize(self):
+        """
+        Initialize our yaml config
+        """
+        self.config = await Load_yaml()
+        self.mongo_uri = self.config["mongodb"]["uri"]
+        
 
         
     async def fetch_design_config(self, guild_id):
@@ -19,9 +28,11 @@ class BaseGuild:
         
         Returns either the values or False
         """
+        if self.config is None:
+            await self.initialize()
         try:
-            db = self.cluster[os.getenv("DESIGN_DB")]
-            design_config = db[os.getenv("DESIGN_COLLECTION")]
+            db = self.cluster[self.config["collections"]["design"]["database"]]
+            design_config = db[self.config["collections"]["design"]["collection"]]
 
             guild_id = int(guild_id)
 
@@ -38,13 +49,16 @@ class BaseGuild:
             return None, None
         
     async def fetch_payment_links(self, guild_id):
+        
         """
         Function for getting payment links for a guild
         
         Returns either the values or a placeholder
         """
-        self.payment_db = self.cluster[os.getenv("PAYMENT_DB")]
-        self.payment_config = self.payment_db[os.getenv("PAYMENT_COLLECTION")]
+        if self.config is None:
+            await self.initialize()
+        self.payment_db = self.cluster[self.config["collections"]["payment"]["database"]]
+        self.payment_config = self.payment_db[self.config["collections"]["payment"]["collection"]]
         existing_record = self.payment_config.find_one({"guild_id": guild_id})
 
         if existing_record:

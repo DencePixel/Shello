@@ -2,17 +2,10 @@ import sys
 sys.dont_write_bytecode = True
 import discord
 from discord import ui
-from pymongo import MongoClient
 import discord.ext
 from discord.ext import commands
-from discord import app_commands, Webhook
 import asyncio
-import aiohttp
 from datetime import datetime, timedelta
-import sentry_sdk
-from pytz import timezone
-import datetime
-import pymongo
 import os
 import logging
 from dotenv import load_dotenv
@@ -27,7 +20,6 @@ logging.basicConfig(
     ]
 )
 
-import discord
 
 from jishaku import Jishaku
 
@@ -45,14 +37,12 @@ class SHELLO(commands.AutoShardedBot):
                          "Cogs.Events.error",
                          "Cogs.Events.Join",
                          "Cogs.Commands.Priority.design",
-                         "Utils.routes",
+                         "Util.routes",
                          "Cogs.Commands.Roblox.link"]
         
     async def is_owner(self, user: discord.User):
         if user.id in [
             856971748549197865, # Mark
-            795743076520820776, # Bugsy
-            1084114233429598308, # Marks alt
             
 
 
@@ -102,29 +92,24 @@ class SHELLO(commands.AutoShardedBot):
 
 
 
+
+
 async def run_function(token):
     client = SHELLO()
+    @client.event
+    async def on_command(ctx):
+        if ctx.author.bot:
+            return
+    
+        return
     await client.setup_hook()
     await client.start(token=TOKEN)
 
-def check_env_variables():
-    load_dotenv()
 
-    missing_variables = []
-
-    for variable_name in os.environ:
-        if not os.getenv(variable_name):
-            missing_variables.append(variable_name)
-
-    if missing_variables:
-        logging.error(f"Missing environment variables: {', '.join(missing_variables)}")
-        raise EnvironmentError("One or more required environment variables are missing. Check the .env file.")
 
 if __name__ == "__main__":
-    check_env_variables()
-
     try:
-        shard_count = int(os.getenv("SHARD_COUNT", 1))  # Use 1 as the default value if the environment variable is missing
+        shard_count = int(os.getenv("SHARD_COUNT", 1))
     except ValueError:
         shard_count = 1
         logging.error(f"Incorrect value for shards. Automatically set to {shard_count}")

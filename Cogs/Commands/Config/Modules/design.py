@@ -8,6 +8,7 @@ from roblox import Client
 from discord import app_commands
 from discord import Color
 import discord
+from Util.Yaml import Load_yaml
 from discord.ext import commands
 import discord.ext
 import random
@@ -51,9 +52,9 @@ class DesignLogChannel(discord.ui.ChannelSelect):
 class DesignView(discord.ui.View):
     def __init__(self, ctx, message):
         super().__init__(timeout=None)
-        self.cluster = MongoClient("mongodb+srv://markapi:6U9wkY5D7Hat4OnG@shello.ecmhytn.mongodb.net/")
-        self.db = self.cluster["DesignSystem"]
-        self.design_config = self.db["design config"]
+        self.cluster = MongoClient(self.mongo_uri)
+        self.db = self.cluster[self.config["collections"]["design"]["database"]]
+        self.design_config = self.db[self.config["collections"]["payment"]["collection"]]
         self.message = message
         self.ctx = ctx
         self.designer_role_id = None
@@ -62,6 +63,11 @@ class DesignView(discord.ui.View):
         self.design_log_channel_view = DesignLogChannel(ctx=ctx, design_channel=self.designer_log_channel)
         self.add_item(item=self.designer_role_view)
         self.add_item(item=self.design_log_channel_view)
+        
+        
+    async def initialize(self):
+        self.config = await Load_yaml()  
+        self.mongo_uri = self.config["mongodb"]["uri"]
 
     @discord.ui.button(label="Save Data", row=3)
     async def button_func(self, interaction: discord.Interaction, button: discord.Button):
@@ -70,7 +76,6 @@ class DesignView(discord.ui.View):
             embed.set_author(icon_url=interaction.user.display_avatar.url)
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         
-        # Get the designer_role from the DesignerRole view
         designer_role = self.designer_role_view.designer_role_id
         
         if designer_role:

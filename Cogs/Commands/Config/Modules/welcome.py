@@ -1,15 +1,19 @@
 import discord
 import pymongo
 from pymongo import MongoClient
+from Util.Yaml import Load_yaml
 
 class WelcomeMessageCreation(discord.ui.Modal):
+    
+    
 
     def __init__(self, title='Create a welcome message.'):
-
-        self.cluster = MongoClient("mongodb+srv://markapi:6U9wkY5D7Hat4OnG@shello.ecmhytn.mongodb.net/")
-        self.db = self.cluster["WelcomeSystem"]
-        self.welcome_config = self.db["Welcome Config"]
-
+        
+        self.mongo_uri = None
+        self.config = None
+        self.cluster = MongoClient(self.mongo_uri)
+        self.db = self.cluster[self.config["collections"]["welcome"]["database"]]
+        self.welcome_config = self.db[self.config["collections"]["welcome"]["colleciton"]]
         super().__init__(title=title)
             
         self.Message = discord.ui.TextInput(
@@ -21,6 +25,11 @@ class WelcomeMessageCreation(discord.ui.Modal):
         )
         
         self.add_item(self.Message)
+        
+        
+    async def initialize(self):
+        self.config = await Load_yaml()  
+        self.mongo_uri = self.config["mongodb"]["uri"]
 
     async def on_submit(self, interaction: discord.Interaction):
 
@@ -28,8 +37,7 @@ class WelcomeMessageCreation(discord.ui.Modal):
         guild_id = interaction.guild_id
         welcome_message = self.Message.value
 
-        # Replace placeholders with actual values
-        member = interaction.user  # Assuming you want to mention the user who interacted
+        member = interaction.user
         existing_record = self.welcome_config.find_one({"guild_id": guild_id})
 
         if existing_record:

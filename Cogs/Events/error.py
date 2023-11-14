@@ -12,7 +12,8 @@ class nocmd(commands.Cog):
     @commands.Cog.listener(name="on_command_error")
     async def commanderror(self, ctx, error):
         if isinstance(error, commands.CommandNotFound):
-            await ctx.send(f"{denied_emoji} **{ctx.author.display_name},** I can't find the command you referenced!")
+            return await ctx.send(f"{denied_emoji} **{ctx.author.display_name},** I can't find the command you referenced!")
+        embed = discord.Embed(title=f"{denied_emoji} **{ctx.author.display_name},** I have encountered an error!")
 
     @commands.Cog.listener(name="on_application_command_error")
     async def appcommanderror(self, interaction: discord.Interaction, error):

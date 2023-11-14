@@ -8,9 +8,11 @@ import sqlite3
 from random import randint
 import random
 import roblox
+
 from roblox import Client
 from pymongo import MongoClient
 
+from Util.Yaml import Load_yaml, initalize_yaml
 import string
 import aiohttp
 import json
@@ -34,13 +36,21 @@ class Done(discord.ui.View):
         self.code = random_string
         self.message = message
         self.interaction = interaction
+        self.mongo_uri = None
+        self.config = None
+        
+    async def initialize(self):
+        self.config = await Load_yaml()
+        self.mongo_uri = self.config["mongodb"]["uri"]
 
     @discord.ui.button(label="Done", style=discord.ButtonStyle.green)
     async def done(self, interaction: discord.Interaction, button: discord.Button):
-        mongo_uri = "mongodb+srv://markapi:6U9wkY5D7Hat4OnG@shello.ecmhytn.mongodb.net/"
+        if self.config is None:
+            await self.initialize()
+        mongo_uri = self.mongo_uri
         cluster = MongoClient(mongo_uri)
-        db = cluster["Roblox"]
-        verify_config = db["accounts"]
+        db = cluster[self.config["collections"]["Roblox"]["database"]]
+        verify_config = db[self.config["collections"]["Roblox"]["accounts_collection"]]
 
         user = await rclient.get_user_by_username(self.user, expand=True)
         description = user.description
@@ -83,11 +93,13 @@ class Done(discord.ui.View):
 
 class Username(discord.ui.Modal):
 
-    def __init__(self, message, ctx):
+    def __init__(self, message, ctx, mongo_uri, config):
         
-        self.cluster = MongoClient("mongodb+srv://markapi:6U9wkY5D7Hat4OnG@shello.ecmhytn.mongodb.net/")
-        self.db = self.cluster["Roblox"]
-        self.verify_config = self.db["accounts"]
+        self.mongo_uri = mongo_uri
+        self.config = config
+        self.message = message
+        self.db = self.config["collections"]["Roblox"]["database"]
+        self.verify_config = self.config["collections"]["Roblox"]["accounts_collection"]
         self.ctx= ctx
 
 
@@ -103,6 +115,12 @@ class Username(discord.ui.Modal):
         )
         
         self.add_item(self.name)
+        
+
+        
+
+        
+
 
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -136,13 +154,17 @@ class Username(discord.ui.Modal):
 class ApprovedMen2u(discord.ui.View):
     def __init__(self, message, ctx):
         super().__init__(timeout=None)
+        self.mongo_uri = None
+        self.config = None
         self.message = message
         self.ctx=ctx
 
     @discord.ui.button(label="Verify", style=discord.ButtonStyle.green, custom_id=f"persistent_view:verify")
     async def verify(self, interaction: discord.Interaction, button: discord.Button):
-        
-        await interaction.response.send_modal(Username(message=self.message, ctx=self.ctx))
+        if self.config is None:
+            await initalize_yaml(self=self)
+                  
+        await interaction.response.send_modal(Username(message=self.message, ctx=self.ctx, config=self.config, mongo_uri=self.mongo_uri))
         
         
 class LinkAccountCog(commands.Cog):

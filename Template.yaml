@@ -1,0 +1,19 @@
+mongodb:
+  uri: ''
+
+collections:
+  payment:
+    database: ''
+    collection: ''
+
+  design:
+    database: ''
+    collection: ''
+
+  welcome:
+    database: ''
+    collection: ''
+
+  Roblox:
+      database: ''
+      accounts_collection: ''

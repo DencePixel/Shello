@@ -5,14 +5,27 @@ load_dotenv()
 import os
 import aiohttp
 import pymongo
-from Utils.functions import replace_variable_welcome
+from Util.functions import replace_variable_welcome
+
+from Util.Yaml import Load_yaml
+load_dotenv()
+
 
 
 
 class Join(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-        self.mongo_client = pymongo.MongoClient(os.getenv("MONGO_URI"))
+        self.config = None
+        self.mongo_uri = None
+        
+    async def initialize(self):
+        """
+        Initialize our yaml config
+        """
+        self.config = await Load_yaml()
+        self.mongo_uri = self.config["mongodb"]["uri"]
+
 
 
     @commands.Cog.listener()
@@ -27,11 +40,14 @@ class Join(commands.Cog):
     
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        if self.config is None:
+            await self.initialize()
+            
         guild_id = member.guild.id
 
-        cluster = pymongo.MongoClient(os.getenv("MONGO_URI"))
-        db = cluster[os.geten("WELCOME_DB")]
-        welcome_config = db[os.getenv("WELCOME_COLLECTION")]
+        cluster = pymongo.MongoClient(self.mongo_uri)
+        db = cluster[self.config["collections"]["welcome"]["database"]]
+        welcome_config = db[self.config["collections"]["welcome"]["collection"]]
 
         config = welcome_config.find_one({"guild_id": guild_id})
         if config is None:

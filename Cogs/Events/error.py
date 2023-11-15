@@ -5,7 +5,7 @@ from discord.ext import commands
 from Cogs.emojis import *
 import aiohttp
 
-class nocmd(commands.Cog):
+class ErrorCog(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
     
@@ -34,4 +34,4 @@ class nocmd(commands.Cog):
 
         
 async def setup(client: commands.Bot) -> None:
-    await client.add_cog(nocmd(client))
+    await client.add_cog(ErrorCog(client))

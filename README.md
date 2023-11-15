@@ -4,7 +4,7 @@
 
 ## Overview
 
-Shello is a bot based around the design servers for the roblox game [ERLC](https://www.roblox.com/games/2534724415/Emergency-Response-Liberty-County) that is fully open sourced.
+Shello is a bot based around the design servers that is fully open sourced.
 
 ## Installation
 
@@ -39,7 +39,12 @@ If you'd like to contribute to Shellos's development, feel free to submit pull r
 For questions, bug reports, or feature requests, please join our [Discord server](https://discord.gg/6R29j6ACvz) for support and discussions.
 
 ## Self Hosted Setup
-Shello was not constructed to be self hosted, it is more than likely you will end up violating the License and mess up your local version, but if you can figure out a way to host it while abiding by the license and getting it to work then congratulations.
+Shello would not be Shello if we didn't allow developers to use our bot on their own systems in the easiest fashion possible. How to self host shello:
+
+1. Edit your .env.template file and rename it to .env
+2. Edit your Template.yaml file and rename it to config.yaml
+3. Install ``-r requirements.txt``
+4. Run the bot with python
 
 ## Acknowledgments
 

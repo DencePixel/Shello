@@ -1,12 +1,9 @@
 import json
-
 import discord
 from discord.ext import commands, ipc
 from discord.ext.ipc.objects import ClientPayload
 from discord.ext.ipc.server import Server
-
 import pymongo
-
 class Routes(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot

@@ -11,6 +11,8 @@ import datetime
 import pymongo
 import os
 import logging
+from Util.remote import NetworkServer
+import threading
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -96,19 +98,21 @@ class SHELLO(commands.AutoShardedBot):
 
 
 
-
-async def run_function(token):
+async def run_function(token, network_server):
     client = SHELLO()
+    
     @client.event
     async def on_command(ctx):
         if ctx.author.bot:
             return
     
         return
+    
     await client.setup_hook()
-    await client.start(token=TOKEN)
-
-
+    
+    await asyncio.gather(
+        client.start(token=TOKEN),
+    )
 
 if __name__ == "__main__":
     try:
@@ -116,9 +120,15 @@ if __name__ == "__main__":
     except ValueError:
         shard_count = 1
         logging.error(f"Incorrect value for shards. Automatically set to {shard_count}")
+
     if os.getenv("ENVIORMENT").lower() == "production" or os.getenv("ENVIORMENT").lower() == "development":
         TOKEN = os.getenv("PRODUCTION_BOT_TOKEN" if os.getenv("ENVIORMENT") == "production" else "DEVELOPMENT_BOT_TOKEN")
+        
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(run_function(token=TOKEN))
+        try:
+            loop.run_until_complete(run_function(token=TOKEN))
+        except KeyboardInterrupt:
+            loop.run_until_complete(SHELLO.close())
+            loop.close()
     else:
         logging.error("Invalid environment option. Please either use development or production.")

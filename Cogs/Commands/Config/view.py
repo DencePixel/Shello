@@ -10,7 +10,7 @@ class ModuleSelection(discord.ui.Select):
         options=[
             discord.SelectOption(label="View Configuration",description="View this servers configuration.", value=f"Configuration"),
             discord.SelectOption(label="Configure Designs",description="Configure the designs module.", value="Designs"),
-            discord.SelectOption(label="Configure Payment Links",description="Configure the payment module/", value="Payment Links")
+            discord.SelectOption(label="Configure Payment",description="Configure the payment module.", value="Payment Links")
             ]
         super().__init__(placeholder="Select an option",max_values=1,min_values=1,options=options)
     async def callback(self, interaction: discord.Interaction):

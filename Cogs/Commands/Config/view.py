@@ -1,6 +1,7 @@
 import discord 
 from discord.ext import commands 
 from Cogs.Commands.Config.Modules.design import DesignView
+from Cogs.emojis import approved_emoji, denied_emoji
 from Cogs.Commands.Config.Modules.payment import PaymentLinksActionSelect
 
 class ModuleSelection(discord.ui.Select):
@@ -20,9 +21,8 @@ class ModuleSelection(discord.ui.Select):
             if interaction.user.id != self.ctx.author.id:
                 return
             
-            embed = discord.Embed(title=f"Design Configuration", description=f"Feel free to configure the designs module!", color=discord.Color.dark_embed())
             TheView = DesignView(ctx=self.ctx, message=self.message)
-            await self.message.edit(view=TheView, embed=embed, content=None)
+            await self.message.edit(view=TheView, embed=None, content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the design module.")
             
             
         if self.values[0] == "Payment Links":
@@ -31,7 +31,7 @@ class ModuleSelection(discord.ui.Select):
             
             
             view = PaymentLinksActionSelect(message=self.message, user=self.ctx)
-            await self.message.edit(embed=None, view=view)
+            await self.message.edit(embed=None, view=view, content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the payment module.")
             
 
 class SelectView(discord.ui.View):

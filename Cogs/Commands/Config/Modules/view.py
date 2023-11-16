@@ -1,8 +1,9 @@
 import discord
+from Cogs.emojis import approved_emoji, denied_emoji
 
 class GlobalFinishedButton(discord.ui.Button):
     def __init__(self, ctx, message):
-        super().__init__(style=discord.ButtonStyle.green, label="Finished", row=2)
+        super().__init__(style=discord.ButtonStyle.gray, label="Return", row=2)
         self.ctx = ctx
         self.message = message
 
@@ -14,4 +15,4 @@ class GlobalFinishedButton(discord.ui.Button):
 
         await interaction.response.defer()
 
-        await self.message.edit(content="You are now setting up shello!", view=SelectView(ctx=self.ctx, message=self.message), embed=None)
+        await self.message.edit(content=f"{approved_emoji} **{interaction.user.display_name},** are now setting up shello!", view=SelectView(ctx=self.ctx, message=self.message), embed=None)

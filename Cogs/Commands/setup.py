@@ -15,7 +15,7 @@ from Cogs.emojis import approved_emoji, denied_emoji
 
 roclient = Client()
 
-roclient.set_token("") # set the roblox token
+roclient.set_token("")
 
 
 

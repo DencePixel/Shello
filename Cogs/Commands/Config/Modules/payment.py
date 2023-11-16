@@ -19,38 +19,24 @@ class PaymentLinksDeletionView(discord.ui.View):
 
 
         
-class PaymentLinksCreationView(discord.ui.View):
-    def __init__(self, message, user):
-        from Cogs.Commands.Config.Modules.view import GlobalFinishedButton
 
-        super().__init__()
-        self.message = message
-        self.ctx = user
-        self.add_item(GlobalFinishedButton(message=self.message, ctx=self.ctx))
-
-    @discord.ui.button(label="Add A Link", style=discord.ButtonStyle.green, row=1)
-    async def AddALink(self, interaction: discord.Interaction, button: discord.Button):
-        if interaction.user.id != self.ctx.author.id:
-            return
-        
-        
-        await interaction.response.send_modal(PaymentLinkCreation())
 
 class PaymentLinksActionSelect(discord.ui.View):
     def __init__(self, message, user):
         super().__init__()
+        from Cogs.Commands.Config.Modules.view import GlobalFinishedButton
         self.message = message
         self.ctx = user
+        
+        self.add_item(GlobalFinishedButton(message=self.message, ctx=self.ctx))
+
 
     @discord.ui.button(label="Add A Link", style=discord.ButtonStyle.green)
     async def AddALink(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user.id != self.ctx.author.id:
             return
         
-        embed = discord.Embed(title=f"Link Configuration", description=f"Please click the button below to add a link.")
-        view = PaymentLinksCreationView(message=self.message, user=self.ctx)
-        await interaction.response.defer()
-        await self.message.edit(view=view, embed=embed, content=None)
+        await interaction.response.send_modal(PaymentLinkCreation(title=f"Create a payment link"))
 
     @discord.ui.button(label="Delete A Link", style=discord.ButtonStyle.red)
     async def DeleteALink(self, interaction: discord.Interaction, button: discord.Button):
@@ -66,6 +52,8 @@ class PaymentLinksActionSelect(discord.ui.View):
 
 class PaymentLinkCreation(Modal):
     def __init__(self, title='Create a payment link.'):
+        self.config = Load_yaml()  
+        self.mongo_uri = self.config["mongodb"]["uri"]
         super().__init__(title=title)
 
             
@@ -85,10 +73,7 @@ class PaymentLinkCreation(Modal):
         )
         self.add_item(self.Title)
         self.add_item(self.Link)
-    
-    async def initialize(self):
-        self.config = await Load_yaml()  
-        self.mongo_uri = self.config["mongodb"]["uri"]
+
 
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer()
@@ -129,8 +114,15 @@ class PaymentLinkDeletion(discord.ui.Select):
         super().__init__(placeholder='Select a payment link to delete', min_values=1, max_values=1, row=1)
         self.guild_id = guild_id
 
+        self.config = Load_yaml()
+        self.mongo_uri = self.config["mongodb"]["uri"]
+  
+        self.cluster = MongoClient(self.mongo_uri)
+        self.db = self.cluster[self.config["collections"]["payment"]["database"]]
+        self.payment_config = self.db[self.config["collections"]["payment"]["collection"]]
+
         
-        existing_record = self.design_config.find_one({"guild_id": guild_id})
+        existing_record = self.payment_config.find_one({"guild_id": guild_id})
         links = existing_record.get("links", {}) if existing_record else {}
         
         if not links:
@@ -140,10 +132,6 @@ class PaymentLinkDeletion(discord.ui.Select):
                 if i >= 25:
                     break
                 self.add_option(label=title, value=link)
-                
-    async def initialize(self):
-        self.config = await Load_yaml()  
-        self.mongo_uri = self.config["mongodb"]["uri"]
 
     async def callback(self, interaction: discord.Interaction):
         selected_value = self.values[0]
@@ -152,18 +140,16 @@ class PaymentLinkDeletion(discord.ui.Select):
             await interaction.response.send_message("There are no payment links available to delete.", ephemeral=True)
             return
 
-        cluster = MongoClient(self.mongo_uri)
-        db = cluster[self.config["collections"]["payment"]["database"]]
-        payment_config = db[self.config["collections"]["payment"]["collection"]]
 
-        existing_record = payment_config.find_one({"guild_id": self.guild_id})
+
+        existing_record = self.payment_config.find_one({"guild_id": self.guild_id})
         links = existing_record.get("links", {}) if existing_record else {}
 
         if selected_value in links.values():
             selected_key = next(key for key, value in links.items() if value == selected_value)
             del links[selected_key]
 
-            payment_config.update_one({"guild_id": self.guild_id}, {"$set": {"links": links}})
+            self.payment_config.update_one({"guild_id": self.guild_id}, {"$set": {"links": links}})
 
             await interaction.response.send_message(f"Payment link '{selected_key}' has been deleted from MongoDB.", ephemeral=True)
         else:

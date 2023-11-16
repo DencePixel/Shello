@@ -35,14 +35,15 @@ class DesignCog(commands.Cog):
         self.config = None  
         self.cluster = MongoClient(self.mongo_uri)
         
-    async def initialize(self):
-        self.config = await Load_yaml()  
+        self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
         
         self.payment_db = self.cluster[self.config["collections"]["payment"]["database"]]
-        self.payment_config = self.payment_db[self.config["collections"]["payments"]["collection"]]
+        self.payment_config = self.payment_db[self.config["collections"]["payment"]["collection"]]
         self.design_Db = self.cluster[self.config["collections"]["design"]["database"]]
-        self.design_config = self.design_Db[self.config["collections"]["design"]["collection"]]
+        self.design_config = self.design_Db[self.config["collections"]["design"]["config_collection"]]
+        self.design_records = self.design_Db[self.config["collections"]["design"]["log_collection"]]
+
         
 
 
@@ -81,13 +82,20 @@ class DesignCog(commands.Cog):
             return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you are missing the required roles.")
         
         embed = discord.Embed(description=f"Greetings {customer.mention}! Your design has now been finished, please pay <:Roblox:1172789898898591764> **{price}** Robux by clicking this [link]({link}) and purchasing the item, once finished please let your designer know so that they can mark the design as finished!", color=discord.Color.dark_embed())
+        await ctx.send(embed=embed, content=customer.mention)
 
-            
+        
         
         log_Embed = discord.Embed(description=f"**Order Log**\n\n> **designer:** {ctx.author.mention}\n> **Product:** {product}\n> **Price:** {price}", color=discord.Color.dark_embed(), timestamp=discord.utils.utcnow())
         log_Embed.set_footer(text=f"Order ID: {ctx.author.id}{random.randint(1000,9999)}")
         log_Embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
         await designer_channel.send(embed=log_Embed)
+        
+        
+        
+        
+    #@design.command(name=f"find", description=f"Find a design by a specific ID")
+    #async def find(self, ctx: commands.Context)
         
 
 
@@ -112,8 +120,12 @@ class DesignCog(commands.Cog):
         choices = [
             app_commands.Choice(name=link, value=link) for link in payment_links if current.lower() in link.lower()
         ]
-
-        return choices
+        
+        if choices:
+            return choices
+        
+        else:
+            return "No Payment Links"
         
  
     

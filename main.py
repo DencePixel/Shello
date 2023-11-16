@@ -97,7 +97,7 @@ class SHELLO(commands.AutoShardedBot):
 
 
 
-async def run_function(token, network_server):
+async def run_function(token):
     client = SHELLO()
     
     @client.event
@@ -110,7 +110,7 @@ async def run_function(token, network_server):
     await client.setup_hook()
     
     await asyncio.gather(
-        client.start(token=TOKEN),
+        client.start(token=token),
     )
 
 if __name__ == "__main__":

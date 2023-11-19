@@ -15,18 +15,6 @@ from Util.Yaml import Load_yaml
 
 Base_User = BaseUser()
 Base_Guild = BaseGuild()
-
-
-
-
-    
-    
-
-            
-
-
-        
-
     
 class DesignCog(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -84,13 +72,15 @@ class DesignCog(commands.Cog):
         embed = discord.Embed(description=f"Greetings {customer.mention}! Your design has now been finished, please pay <:Roblox:1172789898898591764> **{price}** Robux by clicking this [link]({link}) and purchasing the item, once finished please let your designer know so that they can mark the design as finished!", color=discord.Color.dark_embed())
         await ctx.send(embed=embed, content=customer.mention)
 
-        
-        
+        order_id = f"{ctx.author.id}{random.randint(1000,9999)}"
         log_Embed = discord.Embed(description=f"**Order Log**\n\n> **designer:** {ctx.author.mention}\n> **Product:** {product}\n> **Price:** {price}", color=discord.Color.dark_embed(), timestamp=discord.utils.utcnow())
-        log_Embed.set_footer(text=f"Order ID: {ctx.author.id}{random.randint(1000,9999)}")
+        log_Embed.set_footer(text=f"Order ID: {order_id}")
         log_Embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
         await designer_channel.send(embed=log_Embed)
         
+        await Base_Guild.update_design_logs(order_id=order_id, customer_id=customer.id, designer_id=ctx.author.id, price=price, product=product)
+        
+                
         
         
         

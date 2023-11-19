@@ -2,6 +2,7 @@ import pymongo
 import os
 from dotenv import load_dotenv
 from Util.Yaml import Load_yaml
+import datetime
 load_dotenv()
 
 
@@ -66,13 +67,28 @@ class BaseGuild:
             return [f"{name}" for name, link in links.items()]
         else:
             return ["No payment links exist"]
-        
-    async def update_design_logs(self, guild_id, data):
+    
+    
+    async def update_design_logs(self, order_id, designer_id, customer_id, price, product):
         """
         Function to update design logs for the guild
         
         Returns a boolean dependant on if it suceeded or not
         """
-        pass
+        try:
+            record = {
+                "order_id": order_id,
+                "designer_id": designer_id,
+                "customer_id": customer_id,
+                "price": price,
+                "product": product,
+                "timestamp": datetime.datetime.utcnow()
+            }
+            result = await self.design_records.insert_one(record)
+            return result.inserted_id 
+        except Exception as e:
+            print(f"Error inserting design record: {e}")
+            return None
+
         
         

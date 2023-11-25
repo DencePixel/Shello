@@ -10,13 +10,6 @@ class ErrorCog(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
-    @commands.Cog.listener(name="on_command_error")
-    async def commanderror(self, ctx, error):
-        if isinstance(error, commands.CommandNotFound):
-            return await ctx.send(f"{denied_emoji} **{ctx.author.display_name},** I can't find the command you referenced!")
-
-        embed = discord.Embed(description=f"```py\n{error}```", color=discord.Color.dark_embed())
-        return await self.send_error_message(ctx, embed)
 
     @commands.Cog.listener(name="on_application_command_error")
     async def appcommanderror(self, interaction: discord.Interaction, error):
@@ -32,9 +25,12 @@ class ErrorCog(commands.Cog):
             color=discord.Color.red(),
             timestamp=discord.utils.utcnow(),
         )
-        await self.send_error_message(interaction, embed)
 
         developer_embed = discord.Embed(description=f"```py\n{error}```")
+        button = Button(style=discord.ButtonStyle.link, label="Report Error", url="https://discord.gg/FFZzpZ9MMX")
+        view = discord.ui.View()
+        view.add_item(button)
+        await interaction.response.send_message(embed=embed, view=view)
         developer_embed.set_footer(text=f"Error ID: {error_id}")
         channel = self.client.get_channel(1165730359888052304)
         await channel.send(content=error_id, embed=developer_embed)

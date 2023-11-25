@@ -9,4 +9,4 @@ better-ipc
 roblox
 python-dotenv
 rollbar
-#
+PyYaml

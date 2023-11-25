@@ -9,7 +9,6 @@ import discord
 from discord.ext import commands
 import discord.ext
 from datetime import timedelta
-from pymongo import MongoClient
 from Cogs.Commands.Config.view import SelectView
 from Cogs.emojis import approved_emoji, denied_emoji
 

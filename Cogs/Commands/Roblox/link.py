@@ -36,12 +36,11 @@ class Done(discord.ui.View):
         self.code = random_string
         self.message = message
         self.interaction = interaction
-        self.mongo_uri = None
-        self.config = None
-        
-    async def initialize(self):
-        self.config = await Load_yaml()
+        self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
+        self.cluster = MongoClient(self.mongo_uri)
+        
+
 
     @discord.ui.button(label="Done", style=discord.ButtonStyle.green)
     async def done(self, interaction: discord.Interaction, button: discord.Button):
@@ -154,15 +153,15 @@ class Username(discord.ui.Modal):
 class ApprovedMen2u(discord.ui.View):
     def __init__(self, message, ctx):
         super().__init__(timeout=None)
-        self.mongo_uri = None
-        self.config = None
+        self.config = Load_yaml()  
+        self.mongo_uri = self.config["mongodb"]["uri"]
+        self.cluster = MongoClient(self.mongo_uri)
         self.message = message
         self.ctx=ctx
 
     @discord.ui.button(label="Verify", style=discord.ButtonStyle.green, custom_id=f"persistent_view:verify")
     async def verify(self, interaction: discord.Interaction, button: discord.Button):
-        if self.config is None:
-            await initalize_yaml(self=self)
+
                   
         await interaction.response.send_modal(Username(message=self.message, ctx=self.ctx, config=self.config, mongo_uri=self.mongo_uri))
         

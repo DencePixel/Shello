@@ -16,7 +16,7 @@ def initalize_yaml(self):
     self.config = Load_yaml()
     self.mongo_uri = self.config["mongodb"]["uri"]
     
-    if ["mongodb"]["uri"] is None:
+    if self.config["mongodb"]["uri"] is None:
         raise Exception("No mongo URI found")
 
 if __name__ == '__main__':

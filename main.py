@@ -143,3 +143,4 @@ if __name__ == "__main__":
             loop.close()
     else:
         logging.error("Invalid environment option. Please either use development or production.")
+

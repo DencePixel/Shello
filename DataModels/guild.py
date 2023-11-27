@@ -151,8 +151,7 @@ class BaseGuild:
     async def fetch_design(self, order_id):
         try:
             log_designs_collection = self.cluster[self.config["collections"]["design"]["database"]][self.config["collections"]["design"]["log_collection"]]
-            order_id_str = str(order_id)
-            return log_designs_collection.find_one({"order_id": order_id_str})
+            return log_designs_collection.find_one({"order_id": order_id})
         except Exception as e:
             return None
         

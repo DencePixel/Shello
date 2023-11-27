@@ -33,7 +33,7 @@ class Join(commands.Cog):
         async with aiohttp.ClientSession() as session:
             embed = discord.Embed(description=f"``>`` {guild.name}\n``>`` {guild.id}\n``>`` {guild.owner.mention}", color=discord.Color(2829617))
             webhook = discord.Webhook.from_url(os.getenv("BOT_JOINS_WEBHOOK"), session=session)
-            webhook.send(embed=embed)
+            await webhook.send(embed=embed)
         
 
 

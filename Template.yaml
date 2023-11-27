@@ -8,12 +8,28 @@ collections:
 
   design:
     database: ''
-    collection: ''
+    config_collection: ''
+    log_collection: ''
+    feedback_collection: ''
+    active_designs_collection: ''
+    quota_collection: ''
+    refund_collection: ''
 
   welcome:
     database: ''
     collection: ''
 
   Roblox:
-      database: ''
-      accounts_collection: ''
+    database: ''
+    accounts_collection: ''
+
+  Customization:
+    database: ''
+    prefixes: ''
+
+  
+  
+
+           
+
+

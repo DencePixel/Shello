@@ -11,11 +11,11 @@ class ModuleSelection(discord.ui.Select):
         self.message = message
         self.ctx = ctx
         options=[
-            discord.SelectOption(label="View Configuration",description="View this servers configuration.", value=f"Configuration"),
             discord.SelectOption(label="Designs",description="Configure the designs module.", value="Designs", emoji=f"<:design:1177878139611914321>"),
             discord.SelectOption(label="Feedback",description="Configure the feedback module.", value="Feedback", emoji=f"<:feedback:1177878141012803706>"),
             discord.SelectOption(label="Payment",description="Configure the payment module.", value="Payment Links", emoji=f"<:payment:1177878137674145833>"),
-            discord.SelectOption(label=f"Activity", description=f"Configure the activity module.", value=f"Quota", emoji=f"<:order_updated:1177327822721794058>")
+            discord.SelectOption(label=f"Activity", description=f"Configure the activity module.", value=f"Quota", emoji=f"<:order_updated:1177327822721794058>"),
+            discord.SelectOption(label=f"Welcome", description=f"Configure the welcome module.", value=f"Welcome", emoji=f"<:person_check:1178413964531609652>")
             ]
         super().__init__(placeholder="Select an option",max_values=1,min_values=1,options=options)
     async def callback(self, interaction: discord.Interaction):

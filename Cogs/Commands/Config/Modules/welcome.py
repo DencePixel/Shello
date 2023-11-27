@@ -9,8 +9,8 @@ class WelcomeMessageCreation(discord.ui.Modal):
 
     def __init__(self, title='Create a welcome message.'):
         
-        self.mongo_uri = None
-        self.config = None
+        self.config = Load_yaml()
+        self.mongo_uri = self.config["mongodb"]["uri"]  
         self.cluster = MongoClient(self.mongo_uri)
         self.db = self.cluster[self.config["collections"]["welcome"]["database"]]
         self.welcome_config = self.db[self.config["collections"]["welcome"]["colleciton"]]
@@ -27,9 +27,7 @@ class WelcomeMessageCreation(discord.ui.Modal):
         self.add_item(self.Message)
         
         
-    async def initialize(self):
-        self.config = await Load_yaml()  
-        self.mongo_uri = self.config["mongodb"]["uri"]
+
 
     async def on_submit(self, interaction: discord.Interaction):
 
@@ -53,17 +51,67 @@ class WelcomeMessageCreation(discord.ui.Modal):
             }
             self.welcome_config.insert_one(new_record)
 
-class DesignLogChannel(discord.ui.ChannelSelect):
-    def __init__(self, ctx, design_channel):
-        self.designer_log_channel = design_channel
+class WelcomeLogChannel(discord.ui.ChannelSelect):
+    def __init__(self, ctx, welcome_channel, message):
+        self.welcome_channel = welcome_channel
         self.ctx= ctx
+        self.message = message
 
-        super().__init__(placeholder="Select a design log channel", max_values=1, min_values=1, row=2)
+        super().__init__(placeholder="Select a welcome channel", max_values=1, min_values=1, row=2)
     async def callback(self, interaction: discord.Interaction):
         if self.ctx.author.id != interaction.user.id:
             embed = discord.Embed(description=f"This is not your panel!", color=discord.Color.dark_embed())
             embed.set_author(icon_url=interaction.user.display_avatar.url)
             return await interaction.response.send_message(embed=embed, ephemeral=True, content=None)
                 
-        self.designer_log_channel = int(self.values[0].id)
+        self.welcome_channel = int(self.values[0].id)
         await interaction.response.defer()
+        
+
+
+class WelcomeModuleSelection(discord.ui.Select):
+    def __init__(self, message, ctx):
+        self.message = message
+        self.ctx = ctx
+        options=[
+            discord.SelectOption(label="Welcome Channel",description="What channel should welcome messages get sent to", value="Channel"),
+            discord.SelectOption(label=f"Welcome Message", description=f"What is the welcome message", value=f"Message")
+            ]
+        super().__init__(placeholder="Select an option",max_values=1,min_values=1,options=options, row=1)
+    async def callback(self, interaction: discord.Interaction):
+
+        if self.values[0] == "Message":
+            if interaction.user.id != self.ctx.author.id:
+                return
+            
+            await interaction.response.send_modal(WelcomeMessageCreation())            
+
+        if self.values[0] == "Channel":
+            if interaction.user.id != self.ctx.author.id:
+                return
+            
+            await interaction.response.defer()
+            
+            view = discord.ui.View(timeout=None)
+            view.add_item(ActivityChannel(self.ctx, message=self.message))
+            from Cogs.Commands.Config.Modules.view import GlobalFinishedButton
+            view.add_item(GlobalFinishedButton(ctx=self.ctx, message=self.message))
+            await self.message.edit(view=view, content=f"<:Approved:1163094275572121661> **{self.ctx.author.display_name},** you are now setting up the activity channel.")
+            
+
+        
+            
+
+class ActivityModuleSelectView(discord.ui.View):
+    def __init__(self, *, timeout = 180, ctx, message):
+        self.ctx= ctx
+        self.message = message
+        super().__init__(timeout=timeout)
+        self.add_item(ActivityModuleSelection(ctx=self.ctx, message=self.message))
+        from Cogs.Commands.Config.Modules.view import GlobalFinishedButton
+        self.add_item(GlobalFinishedButton(ctx=self.ctx, message=self.message))
+        
+        
+        
+
+        

@@ -38,11 +38,11 @@ class QuotaCog(commands.Cog):
         self.design_records = self.design_Db[self.config["collections"]["design"]["log_collection"]]
 
 
-    @tasks.loop(seconds=15)
+    @tasks.loop(minutes=1)
     async def send_weekly_leaderboard(self):
         now = datetime.utcnow() + timedelta(hours=0)
         
-        if now.weekday() == 7 and now.hour == 6 and now.minute == 30:
+        if now.weekday() == 4 and now.hour == 16 and now.minute == 30:
             try:
                 await self.send_leaderboard()
             except Exception as e:

@@ -13,6 +13,7 @@ collections:
     feedback_collection: ''
     active_designs_collection: ''
     quota_collection: ''
+    refund_collection: ''
 
   welcome:
     database: ''

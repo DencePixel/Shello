@@ -27,6 +27,10 @@ class Routes(commands.Cog):
 
         return user._to_minimal_user_json()
     
+    @Server.route(name=f"hiya")
+    async def hiya(self):
+        return "hi"
+    
     @Server.route()
     async def get_bot_guilds(self, data: ClientPayload):
         """returns a list of guild ids for the bots guilds"""

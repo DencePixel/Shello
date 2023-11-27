@@ -31,12 +31,11 @@ class SHELLO(commands.AutoShardedBot):
     def __init__(self):
         intents = discord.Intents().all()
         super().__init__(
-            command_prefix=self.get_guild_prefix,  # Use a callable for the prefix
+            command_prefix=commands.when_mentioned_or("$$"),
             intents=intents,
             shard_count=shard_count
         )
 
-        self.guild_prefixes = {}  # Dictionary to store guild prefixes
         self.cogslist = [
             "Cogs.Commands.setup",
             "Cogs.Events.error",
@@ -44,7 +43,10 @@ class SHELLO(commands.AutoShardedBot):
             "Cogs.Commands.Priority.design",
             "Util.routes",
             "Cogs.Commands.Roblox.link",
-            "Cogs.Commands.Priority.activity"
+            "Cogs.Commands.Priority.activity",
+            "Cogs.Commands.Priority.feedback",
+            "Cogs.Commands.Statistics.Ping",
+            "Cogs.Commands.Priority.refund"
         ]
 
     async def is_owner(self, user: discord.User):
@@ -62,8 +64,6 @@ class SHELLO(commands.AutoShardedBot):
     async def setup_hook(self):
         pass
 
-    async def get_guild_prefix(self, bot, message):
-        return self.guild_prefixes.get(message.guild.id, "$$")
 
     async def on_ready(self):
         logging.info(f'Logged in as {self.user} (ID: {self.user.id})')

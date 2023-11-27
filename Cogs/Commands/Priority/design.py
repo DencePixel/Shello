@@ -309,6 +309,7 @@ class DesignCog(commands.Cog):
         feedback_channel = ctx.guild.get_channel(feedback_channel_id)
         await feedback_channel.send(embed=embed)
         await ctx.send(f"<:Approved:1163094275572121661> **{ctx.author.display_name},** succesfully sent your feedback!")
-              
+        
+ 
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(DesignCog(client))

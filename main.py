@@ -42,7 +42,7 @@ class SHELLO(commands.AutoShardedBot):
             "Cogs.Events.Join",
             "Cogs.Commands.Priority.design",
             "Util.routes",
-            "Cogs.Commands.Roblox.link",
+            "Cogs.Commands.Priority.roblox",
             "Cogs.Commands.Priority.activity",
             "Cogs.Commands.Priority.feedback",
             "Cogs.Commands.Statistics.Ping",

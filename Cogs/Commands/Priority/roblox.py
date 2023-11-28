@@ -181,7 +181,17 @@ class LinkAccountCog(commands.Cog):
         try:
             await message.edit(view=view)
         except Exception as e:
-            return await ctx.channel.send(content=e)        
+            return await ctx.channel.send(content=e)      
         
+        
+    @roblox_group.command(name=f"tax", description=f"Calculate how much an order would be with tax")  
+    async def taxcalc(self, ctx: commands.Context, amount: float):
+        result = amount / 1.43
+        rounded_result = round(result, 0)
+        embed = discord.Embed(title="🧮 Tax Removal", description=f"<:Shello_Right:1164269631062691880> **Before Tax:** ``{amount}`` \n<:Shello_Right:1164269631062691880> **After Tax Removed:** ``{rounded_result}``", color=discord.Color.dark_embed())
+        embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)        
+        await ctx.reply(embed=embed)
+        
+                
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(LinkAccountCog(client))

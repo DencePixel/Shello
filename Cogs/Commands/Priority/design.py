@@ -233,7 +233,7 @@ class DesignCog(commands.Cog):
             order_id = f"{random.randint(1000, 9999)}"
             await Base_Guild.store_active_design(order_id=order_id, guild=ctx.guild.id, channel=ctx.channel.id, customer=customer.id, price=price, designer=ctx.author.id, product=product)
 
-            embed = discord.Embed(title="Design Started", description=f"Greetings {customer.mention}! The designer {ctx.author.mention} has started your {product}, you will receive updates on your products within this channel and your DM's.", color=discord.Color.light_embed())
+            embed = discord.Embed(title="Design Started", description=f"Greetings {customer.mention}! The designer {ctx.author.mention} has started your **{product}**, you will receive updates on your products within this channel and your DM's.", color=discord.Color.light_embed())
             embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
             embed.set_footer(text="Shello Systems")
 
@@ -266,14 +266,11 @@ class DesignCog(commands.Cog):
         if designer_log_channel_id is None or designer_role_id is None or  staff_Role_id is None:
             return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** The design module is not properly set up.")
         
-        print(staff_role)
-        print(designer_role)
-        print(ctx.author.roles)
+
         if staff_role not in ctx.author.roles and designer_role not in ctx.author.roles:
             return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** You can't use this.")
         
         active_design = await Base_Guild.fetch_active_design(order_id=order_id)
-        print("Active Design:", active_design) 
 
         if not active_design:
             return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** there is no active order for this ID.")
@@ -287,29 +284,6 @@ class DesignCog(commands.Cog):
         view.add_item(DesignContributionOptions(order_id=order_id, author=ctx.author))
         await ctx.send(embed=info_embed, view=view)
                
-    @design.command(name=f"feedback", description=f"Provide feedback on a design you recieved")
-    @discord.app_commands.choices(
-        rating=[
-            discord.app_commands.Choice(name="⭐", value="1"), 
-            discord.app_commands.Choice(name="⭐⭐", value="2"),
-            discord.app_commands.Choice(name="⭐⭐⭐", value="3"),
-            discord.app_commands.Choice(name="⭐⭐⭐⭐", value="4"),
-            discord.app_commands.Choice(name="⭐⭐⭐⭐⭐", value="5")
-        ]
-    )
-    async def feedback(self, ctx: commands.Context, rating: str, *, product: str):
-        embed = discord.Embed(title=f"{product} - Review", description=f"{ctx.author.mention} has rated their {product} a **{rating}** star!", color=discord.Color.gold())
-        embed.set_footer(text=f"Shello Systems")
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)       
-        feedback_channel_id = await Base_Guild.get_feedback_channel(guild_id=ctx.guild.id)
-
-        if feedback_channel_id is None:
-            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** the feedback module has been incorrectly configured.")
-        
-        feedback_channel = ctx.guild.get_channel(feedback_channel_id)
-        await feedback_channel.send(embed=embed)
-        await ctx.send(f"<:Approved:1163094275572121661> **{ctx.author.display_name},** succesfully sent your feedback!")
-        
  
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(DesignCog(client))

@@ -31,10 +31,11 @@ class SHELLO(commands.AutoShardedBot):
     def __init__(self):
         intents = discord.Intents().all()
         super().__init__(
-            command_prefix=commands.when_mentioned_or("$$"),
+            command_prefix=commands.when_mentioned_or("!!"),
             intents=intents,
             shard_count=shard_count
         )
+        self.help_command = None
 
         self.cogslist = [
             "Cogs.Commands.setup",
@@ -46,12 +47,15 @@ class SHELLO(commands.AutoShardedBot):
             "Cogs.Commands.Priority.activity",
             "Cogs.Commands.Priority.feedback",
             "Cogs.Commands.Statistics.Ping",
-            "Cogs.Commands.Priority.refund"
+            "Cogs.Commands.Priority.refund",
+            "Cogs.Commands.Owner.sync",
+            "Cogs.Commands.Priority.help"
         ]
 
     async def is_owner(self, user: discord.User):
         if user.id in [
             856971748549197865,  # Mark
+            795743076520820776, # Bugsy
         ]:
             return True
 
@@ -70,7 +74,7 @@ class SHELLO(commands.AutoShardedBot):
         for ext in self.cogslist:
             if ext != "Util.routes":
                 await self.load_extension(ext)
-                logging.info(f"Cog {ext} acknowledged")
+                logging.info(f"Cog {ext} loaded")
 
             if ext == "Util.routes":
                 if os.getenv("ENVIORMENT").lower() == "production":
@@ -79,7 +83,6 @@ class SHELLO(commands.AutoShardedBot):
                 if os.getenv("ENVIORMENT").lower() == "development":
                     logging.info("IPC Cog not loaded. Reason: Development ENV")
 
-        await self.tree.sync()
         await self.load_jishaku()
 
     async def on_connect(self):

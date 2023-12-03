@@ -44,13 +44,10 @@ class ActivityChannel(discord.ui.ChannelSelect):
             )
             
             return await self.message.edit(
-                content=f"<:Approved:1163094275572121661> **{interaction.user.display_name},** this server's activity channel has been set to <#{activity_channel}>!",
-                ephemeral=True
-                )
+                content=f"<:Approved:1163094275572121661> **{interaction.user.display_name},** this server's activity channel has been set to <#{activity_channel}>!")
         else:
             return await self.message.edit(
-            content=f"<:Approved:1163094275572121661> **{interaction.user.display_name},** you need to setup the design module before you can use this!",
-            ephemeral=True)
+            content=f"<:Approved:1163094275572121661> **{interaction.user.display_name},** you need to setup the design module before you can use this!")
 
 
 

@@ -35,7 +35,7 @@ class Config(commands.Cog):
     async def config(self, ctx):
         pass
     
-    @config.command(name="start")
+    @config.command(name="start", description=f"Configure the current guild")
     async def start(self, ctx: commands.Context):
         if ctx.author.guild_permissions.manage_guild:
             message = await ctx.send(f"{approved_emoji} **{ctx.author.display_name},** you are now setting up Shello!")

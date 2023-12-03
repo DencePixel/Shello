@@ -13,7 +13,7 @@ class WelcomeMessageCreation(discord.ui.Modal):
         self.mongo_uri = self.config["mongodb"]["uri"]  
         self.cluster = MongoClient(self.mongo_uri)
         self.db = self.cluster[self.config["collections"]["welcome"]["database"]]
-        self.welcome_config = self.db[self.config["collections"]["welcome"]["colleciton"]]
+        self.welcome_config = self.db[self.config["collections"]["welcome"]["collection"]]
         super().__init__(title=title)
             
         self.Message = discord.ui.TextInput(
@@ -52,21 +52,43 @@ class WelcomeMessageCreation(discord.ui.Modal):
             self.welcome_config.insert_one(new_record)
 
 class WelcomeLogChannel(discord.ui.ChannelSelect):
-    def __init__(self, ctx, welcome_channel, message):
-        self.welcome_channel = welcome_channel
-        self.ctx= ctx
-        self.message = message
+    def __init__(self, ctx, message):
+        self.config = Load_yaml()
+        self.mongo_uri = self.config["mongodb"]["uri"]  
+        self.ctx = ctx
+        self.cluster = MongoClient(self.mongo_uri)
+        self.db = self.cluster[self.config["collections"]["welcome"]["database"]]
+        self.welcome_config = self.db[self.config["collections"]["welcome"]["collection"]]
 
-        super().__init__(placeholder="Select a welcome channel", max_values=1, min_values=1, row=2)
+        super().__init__(placeholder="Select a welcome channel", max_values=1, min_values=1, row=1)
     async def callback(self, interaction: discord.Interaction):
         if self.ctx.author.id != interaction.user.id:
             embed = discord.Embed(description=f"This is not your panel!", color=discord.Color.dark_embed())
             embed.set_author(icon_url=interaction.user.display_avatar.url)
             return await interaction.response.send_message(embed=embed, ephemeral=True, content=None)
-                
-        self.welcome_channel = int(self.values[0].id)
+        
+        
         await interaction.response.defer()
         
+        
+        guild_id = interaction.guild.id
+        
+        existing_record = self.welcome_config.find_one({"guild_id": guild_id})
+        
+        welcome_channel = int(self.values[0].id)
+
+        if existing_record:
+            
+            self.welcome_config.update_one(
+                {"guild_id": guild_id},
+                {"$set": {"welcome_channel": welcome_channel}}
+            )
+        else:
+            new_record = {
+                "guild_id": guild_id,
+                "welcome_channel": welcome_channel
+            }
+            self.welcome_config.insert_one(new_record)        
 
 
 class WelcomeModuleSelection(discord.ui.Select):
@@ -92,22 +114,37 @@ class WelcomeModuleSelection(discord.ui.Select):
             
             await interaction.response.defer()
             
+            replacements = [
+            '``!member.mention!``\n',
+            '``!member.name!``\n',
+            '``!member.id!``\n',
+            '``!member.discriminator!``\n',
+            '``!member.avatar_url!``\n',
+            '``!member.desktop_status!``\n',  
+            '``!member.mobile_status!``\n',
+
+            '``!guild.name!``\n',
+            '``!guild.id!``\n',
+            '``!guild.member_count!``\n']
+            
             view = discord.ui.View(timeout=None)
-            view.add_item(ActivityChannel(self.ctx, message=self.message))
+            view.add_item(WelcomeLogChannel(self.ctx, message=self.message))
             from Cogs.Commands.Config.Modules.view import GlobalFinishedButton
             view.add_item(GlobalFinishedButton(ctx=self.ctx, message=self.message))
-            await self.message.edit(view=view, content=f"<:Approved:1163094275572121661> **{self.ctx.author.display_name},** you are now setting up the activity channel.")
+            embed = discord.Embed(title="Welcome Message Variables", description=f"".join(replacements))
+            await self.message.edit(view=view, content=f"<:Approved:1163094275572121661> **{self.ctx.author.display_name},** you are now setting up the welcome channel.", embed=embed)
+
             
 
         
             
 
-class ActivityModuleSelectView(discord.ui.View):
+class WelcomeModuleSelectionView(discord.ui.View):
     def __init__(self, *, timeout = 180, ctx, message):
         self.ctx= ctx
         self.message = message
         super().__init__(timeout=timeout)
-        self.add_item(ActivityModuleSelection(ctx=self.ctx, message=self.message))
+        self.add_item(WelcomeModuleSelection(ctx=self.ctx, message=self.message))
         from Cogs.Commands.Config.Modules.view import GlobalFinishedButton
         self.add_item(GlobalFinishedButton(ctx=self.ctx, message=self.message))
         

@@ -11,7 +11,7 @@ class FeedbackChannel(discord.ui.ChannelSelect):
         self.mongo_uri = self.config["mongodb"]["uri"]
         self.cluster = MongoClient(self.mongo_uri)
         self.design_db = self.cluster[self.config["collections"]["design"]["database"]]
-        self.feedback_collection = self.design_db[self.config["collections"]["design"]["feedback_collection"]]
+        self.feedback_collection = self.design_db[self.config["collections"]["design"]["feedback_config"]]
         self.guild_id = guild.id
         super().__init__(placeholder="Select a feedback channel", max_values=1, min_values=1, row=1)  
 

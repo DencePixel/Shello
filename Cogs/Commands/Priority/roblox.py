@@ -166,9 +166,11 @@ class ApprovedMen2u(discord.ui.View):
         await interaction.response.send_modal(Username(message=self.message, ctx=self.ctx, config=self.config, mongo_uri=self.mongo_uri))
         
         
-class LinkAccountCog(commands.Cog):
+class RobloxCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         super().__init__()
+        self.roblox_client = Client()
+
 
     @commands.hybrid_group(name=f"roblox", aliases=["Roblox","Rblx","rblx"])
     async def roblox_group(self, ctx: commands.Context):
@@ -192,6 +194,25 @@ class LinkAccountCog(commands.Cog):
         embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)        
         await ctx.reply(embed=embed)
         
+        
+
+
+    @roblox_group.command(name="user", description="Get information about a Roblox user")
+    async def roblox_user(self, ctx: commands.Context, *, username: str):
+        try:
+            user = await self.roblox_client.get_user_by_username(username)
+        except Exception as e:
+            return await ctx.send(f"An error occurred: {e}")
+
+        if not user:
+            return await ctx.send(f"No Roblox user found with the username '{username}'.")
+
+        embed = discord.Embed(title=f"{username}", color=discord.Color.light_embed(), description=f"<:Shello_Right:1164269631062691880> **Username:** ``{username}``\n<:Shello_Right:1164269631062691880> **User ID:** ``{user.id}``\n<:Shello_Right:1164269631062691880> **Is Banned:** ``{user.is_banned}``")
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
+
+
+        await ctx.send(embed=embed)
+        
                 
 async def setup(client: commands.Bot) -> None:
-    await client.add_cog(LinkAccountCog(client))
+    await client.add_cog(RobloxCog(client))

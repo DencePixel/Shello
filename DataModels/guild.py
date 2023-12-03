@@ -98,7 +98,7 @@ class BaseGuild:
         try:
             connection = pymongo.MongoClient(self.mongo_uri)
             db = connection[self.config["collections"]["design"]["database"]]
-            feedback_collection = db[self.config["collections"]["design"]["feedback_collection"]]
+            feedback_collection = db[self.config["collections"]["design"]["feedback_config"]]
 
             guild_id = int(guild_id)
 

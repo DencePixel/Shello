@@ -16,15 +16,10 @@ load_dotenv()
 class Join(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-        self.config = None
-        self.mongo_uri = None
-        
-    async def initialize(self):
-        """
-        Initialize our yaml config
-        """
-        self.config = await Load_yaml()
+        self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
+        
+
 
 
 
@@ -40,8 +35,6 @@ class Join(commands.Cog):
     
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        if self.config is None:
-            await self.initialize()
             
         guild_id = member.guild.id
 

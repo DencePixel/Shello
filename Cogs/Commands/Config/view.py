@@ -5,6 +5,7 @@ from Cogs.emojis import approved_emoji, denied_emoji
 from Cogs.Commands.Config.Modules.payment import PaymentLinksActionSelect
 from Cogs.Commands.Config.Modules.feedback import FeedbackView
 from Cogs.Commands.Config.Modules.activity import ActivityModuleSelectView
+from Cogs.Commands.Config.Modules.welcome import WelcomeModuleSelectionView
 
 class ModuleSelection(discord.ui.Select):
     def __init__(self, message, ctx):
@@ -14,8 +15,8 @@ class ModuleSelection(discord.ui.Select):
             discord.SelectOption(label="Designs",description="Configure the designs module.", value="Designs", emoji=f"<:design:1177878139611914321>"),
             discord.SelectOption(label="Feedback",description="Configure the feedback module.", value="Feedback", emoji=f"<:feedback:1177878141012803706>"),
             discord.SelectOption(label="Payment",description="Configure the payment module.", value="Payment Links", emoji=f"<:payment:1177878137674145833>"),
-            discord.SelectOption(label=f"Activity", description=f"Configure the activity module.", value=f"Quota", emoji=f"<:order_updated:1177327822721794058>"),
-            discord.SelectOption(label=f"Welcome", description=f"Configure the welcome module.", value=f"Welcome", emoji=f"<:person_check:1178413964531609652>")
+            discord.SelectOption(label="Activity", description=f"Configure the activity module.", value=f"Quota", emoji=f"<:order_updated:1177327822721794058>"),
+            discord.SelectOption(label="Welcome", description=f"Configure the welcome module.", value=f"Welcome", emoji=f"<:person_check:1178413964531609652>")
             ]
         super().__init__(placeholder="Select an option",max_values=1,min_values=1,options=options)
     async def callback(self, interaction: discord.Interaction):
@@ -54,6 +55,11 @@ class ModuleSelection(discord.ui.Select):
             await interaction.response.defer()
             await self.message.edit(view=ActivityModuleSelectView(timeout=None, ctx=self.ctx, message=self.message), content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the activity module.")
         
+        if self.values[0] == "Welcome":
+            if interaction.user.id != self.ctx.author.id:
+                return
+            await interaction.response.defer()
+            await self.message.edit(view=WelcomeModuleSelectionView(timeout=None, ctx=self.ctx, message=self.message), content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the welcome module.")
             
 
 class SelectView(discord.ui.View):

@@ -245,11 +245,11 @@ class RefundCog(commands.Cog):
         
     @refundgroup.command(name="status", description="Check the status of an active refund request")
     async def refund_status(self, ctx: commands.Context, order_id: int):
-        message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** fetching information for that order.")
+        message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** fetching information for that refund request.")
         refund_request = self.refund_records.find_one(
-            {"guild_id": ctx.guild.id, "requester_id": ctx.author.id, "order_id": order_id}
+            {"guild_id": ctx.guild.id, "order_id": order_id}
         )
-        
+
         existing_record = await Base_Guild.fetch_design_config(ctx.guild.id)
 
         if not existing_record:
@@ -259,42 +259,30 @@ class RefundCog(commands.Cog):
         designer_role_id = existing_record.get("designer_role_id")
         staff_Role_id = existing_record.get("staff_role_id")
         staff_role = ctx.guild.get_role(staff_Role_id)
-        order = await Base_Guild.fetch_design(order_id)
-
-        if not order:
-            return await message.edit(content=f"<:Denied:1163095002969276456> **{ctx.author.display_name},** I can't find that order.")
-        designer_role = ctx.guild.get_role(designer_role_id)
 
         if refund_request:
             status = refund_request["status"]
             requester_id = refund_request["requester_id"]
-            if staff_role not in ctx.author.roles or designer_role not in ctx.author.roles or requester_id != ctx.author.id:
-                return await message.edit(content=f"<:Denied:1163095002969276456> **{ctx.author.name},** You can't use this.")
-                
-            
-            
             requester = ctx.guild.get_member(requester_id)
             formatted_timestamp = discord.utils.format_dt(refund_request["timestamp"], style="R")
-            designer = ctx.guild.get_member(order["designer_id"])
 
             embed = discord.Embed(
                 title=f"Refund Request Status",
-                description=f"**Refund Information**\n<:Shello_Right:1164269631062691880> **Order ID:** ``{order_id}``\n<:Shello_Right:1164269631062691880> **Status:** ``{status}``\n<:Shello_Right:1164269631062691880> **Timestamp:** {formatted_timestamp}\n\n**User Information:**\n<:Shello_Right:1164269631062691880> **Requester:** {requester.mention} (``{requester_id}``)\n<:Shello_Right:1164269631062691880> **Designer:** {designer.mention} (``{designer.id}``)",
+                description=f"**Refund Information**\n<:Shello_Right:1164269631062691880> **Order ID:** ``{order_id}``\n<:Shello_Right:1164269631062691880> **Status:** ``{status}``\n<:Shello_Right:1164269631062691880> **Timestamp:** {formatted_timestamp}\n\n**User Information:**\n<:Shello_Right:1164269631062691880> **Requester:** {requester.mention} (``{requester_id}``)",
             )
             embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
             embed.color = discord.Color.light_embed()
-            await message.edit(embed=embed, content=f"<:Approved:1163094275572121661> **{ctx.author.display_name},** here is the status of your refund request.")
+            await message.edit(embed=embed, content=f"<:Approved:1163094275572121661> **{ctx.author.display_name},** here is the status of the refund request.")
         else:
             return await message.edit(content=f"<:Denied:1163095002969276456> **{ctx.author.display_name},** I can't find that refund request.")
-        
-        
+
     @refundgroup.command(name=f"admin", description=f"Manage a refund request")
-    async def admin(self, ctx: commands.Context, order_id: int):
+    async def refundadmin(self, ctx: commands.Context, order_id: int):
         message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** fetching the refund request.")
         refund_request = self.refund_records.find_one(
-            {"guild_id": ctx.guild.id, "requester_id": ctx.author.id, "order_id": order_id}
+            {"guild_id": ctx.guild.id, "order_id": order_id}
         )
-        
+
         existing_record = await Base_Guild.fetch_design_config(ctx.guild.id)
 
         if not existing_record:
@@ -304,23 +292,20 @@ class RefundCog(commands.Cog):
         designer_role_id = existing_record.get("designer_role_id")
         staff_Role_id = existing_record.get("staff_role_id")
         staff_role = ctx.guild.get_role(staff_Role_id)
-        order = await Base_Guild.fetch_design(order_id)
-
-        if not order:
-            return await message.edit(content=f"<:Denied:1163095002969276456> **{ctx.author.display_name},** I can't find that order.")
         designer_role = ctx.guild.get_role(designer_role_id)
 
         if refund_request:
             status = refund_request["status"]
             requester_id = refund_request["requester_id"]
-            if staff_role not in ctx.author.roles or designer_role not in ctx.author.roles or requester_id != ctx.author.id:
+
+            if staff_role not in ctx.author.roles and designer_role not in ctx.author.roles and requester_id != ctx.author.id:
                 return await message.edit(content=f"<:Denied:1163095002969276456> **{ctx.author.name},** You can't use this.")
-            
+
             view = discord.ui.View()
             view.add_item(RefundAdminOptions(author=ctx.author, order_id=order_id))
             await message.edit(view=view, content=f"<:Approved:1163094275572121661> **{ctx.author.display_name},** here is the requested refund request.")
-        
-        
+        else:
+            return await message.edit(content=f"<:Denied:1163095002969276456> **{ctx.author.display_name},** I can't find that refund request.")
 
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(RefundCog(client))

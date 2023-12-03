@@ -90,6 +90,44 @@ class WelcomeLogChannel(discord.ui.ChannelSelect):
             }
             self.welcome_config.insert_one(new_record)        
 
+class JoinRole(discord.ui.RoleSelect):
+    def __init__(self, ctx, message):
+        self.config = Load_yaml()
+        self.mongo_uri = self.config["mongodb"]["uri"]  
+        self.ctx = ctx
+        self.cluster = MongoClient(self.mongo_uri)
+        self.db = self.cluster[self.config["collections"]["welcome"]["database"]]
+        self.welcome_config = self.db[self.config["collections"]["welcome"]["collection"]]
+
+        super().__init__(placeholder="Select a join role", max_values=1, min_values=1, row=1)
+    async def callback(self, interaction: discord.Interaction):
+        if self.ctx.author.id != interaction.user.id:
+            embed = discord.Embed(description=f"This is not your panel!", color=discord.Color.dark_embed())
+            embed.set_author(icon_url=interaction.user.display_avatar.url)
+            return await interaction.response.send_message(embed=embed, ephemeral=True, content=None)
+        
+        
+        await interaction.response.defer()
+        
+        
+        guild_id = interaction.guild.id
+        
+        existing_record = self.welcome_config.find_one({"guild_id": guild_id})
+        
+        welcome_channel = int(self.values[0].id)
+
+        if existing_record:
+            
+            self.welcome_config.update_one(
+                {"guild_id": guild_id},
+                {"$set": {"join_role": welcome_channel}}
+            )
+        else:
+            new_record = {
+                "guild_id": guild_id,
+                "join_role": welcome_channel
+            }
+            self.welcome_config.insert_one(new_record)    
 
 class WelcomeModuleSelection(discord.ui.Select):
     def __init__(self, message, ctx):
@@ -97,7 +135,8 @@ class WelcomeModuleSelection(discord.ui.Select):
         self.ctx = ctx
         options=[
             discord.SelectOption(label="Welcome Channel",description="What channel should welcome messages get sent to", value="Channel"),
-            discord.SelectOption(label=f"Welcome Message", description=f"What is the welcome message", value=f"Message")
+            discord.SelectOption(label=f"Welcome Message", description=f"What is the welcome message", value=f"Message"),
+            discord.SelectOption(label=f"Join Role", description=f"What role should new members get assigned", value=f"Role")
             ]
         super().__init__(placeholder="Select an option",max_values=1,min_values=1,options=options, row=1)
     async def callback(self, interaction: discord.Interaction):
@@ -133,6 +172,24 @@ class WelcomeModuleSelection(discord.ui.Select):
             view.add_item(GlobalFinishedButton(ctx=self.ctx, message=self.message))
             embed = discord.Embed(title="Welcome Message Variables", description=f"".join(replacements))
             await self.message.edit(view=view, content=f"<:Approved:1163094275572121661> **{self.ctx.author.display_name},** you are now setting up the welcome channel.", embed=embed)
+            
+            
+        if self.values[0] == "Role":
+            if interaction.user.id != self.ctx.author.id:
+                return
+            
+            await interaction.response.defer()
+            
+            
+            view = discord.ui.View(timeout=None)
+            view.add_item(JoinRole(self.ctx, message=self.message))
+            from Cogs.Commands.Config.Modules.view import GlobalFinishedButton
+            view.add_item(GlobalFinishedButton(ctx=self.ctx, message=self.message))
+            await self.message.edit(view=view, content=f"<:Approved:1163094275572121661> **{self.ctx.author.display_name},** you are now setting up the new member role.")
+
+            
+
+        
 
             
 

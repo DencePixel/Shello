@@ -72,6 +72,15 @@ class Join(commands.Cog):
         welcome_channel = member.guild.get_channel(welcome_channel_id)
         if welcome_channel:
             await welcome_channel.send(welcome_message)
+            role_id = config.get("join_role")
+            if role_id:
+                role = member.guild.get_role(role_id)
+                if role:
+                    try:
+                        await member.add_roles(role)
+                    except:
+                        return
+                    
 
         
         

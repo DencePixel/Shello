@@ -53,7 +53,7 @@ class HelpCog(commands.Cog):
             
             embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
 
-            await ctx.send(embed=embed)
+            return await ctx.send(embed=embed)
             
         if module.lower() == "payment":
             embed = discord.Embed(
@@ -79,7 +79,7 @@ class HelpCog(commands.Cog):
             
             embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
 
-            await ctx.send(embed=embed)
+            return await ctx.send(embed=embed)
             
         await ctx.send(content=f"<:Denied:1163095002969276456> **{ctx.author.display_name},** I can't find that module!")
 

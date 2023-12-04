@@ -48,6 +48,26 @@ class ErrorCog(commands.Cog):
         developer_embed.set_footer(text=f"Error ID: {error_id}")
         channel = self.client.get_channel(1165730359888052304)
         await channel.send(content=error_id, embed=developer_embed)
+        
+        
+    @commands.Cog.listener(name="on_command_error")
+    async def cerror(self, ctx: commands.Context, error):
+        error_id = random.randint(1, 1000)
+        embed = discord.Embed(
+            title=f"Oops!",
+            description=f"Looks like an error has occurred.\n Error ID: {error_id}",
+            color=discord.Color.red(),
+            timestamp=discord.utils.utcnow(),
+        )
+
+        developer_embed = discord.Embed(description=f"```py\n{error}```")
+        button = Button(style=discord.ButtonStyle.link, label="Report Error", url="https://discord.gg/FFZzpZ9MMX")
+        view = discord.ui.View()
+        view.add_item(button)
+        await ctx.send(embed=embed, view=view)
+        developer_embed.set_footer(text=f"Error ID: {error_id}")
+        channel = self.client.get_channel(1165730359888052304)
+        await channel.send(content=error_id, embed=developer_embed)
 
     async def send_error_message(self, ctx_or_interaction, embed):
         button = Button(style=discord.ButtonStyle.link, label="Report Error", url="https://discord.gg/FFZzpZ9MMX")

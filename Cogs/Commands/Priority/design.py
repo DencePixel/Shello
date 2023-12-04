@@ -50,8 +50,11 @@ class ContributeModal(discord.ui.Modal):
             message_Embed = discord.Embed(title=f"Design Contribution", description=f"{self.Message.value}", color=discord.Color.dark_embed())
             message_Embed.set_author(icon_url=interaction.user.display_avatar.url, name=interaction.user.display_name)
             message_Embed.set_footer(text=f"Design contributed to by {interaction.user.display_name}")
-            await order_channel.send(embed=message_Embed, content=f"<:Approved:1163094275572121661> **{customer.mention}**, there is a new contribution to your design!")      
-            await customer.send(embed=message_Embed, content=f"<:Approved:1163094275572121661> **{customer.display_name}**, there is a new contribution to your design!") 
+            await order_channel.send(embed=message_Embed, content=f"<:Approved:1163094275572121661> **{customer.mention}**, there is a new contribution to your design!")  
+            try:
+                await customer.send(embed=message_Embed, content=f"<:Approved:1163094275572121661> **{customer.display_name}**, there is a new contribution to your design!") 
+            except Exception as e:
+                return await interaction.response.send_message(f"<:Alert:1163094295314706552> **{interaction.user.display_name},** I couldn't message that user.", ephemeral=True) 
             await interaction.response.send_message(f"<:Approved:1163094275572121661> **{interaction.user.display_name},** succesfully sent the customer your contribution.", ephemeral=True) 
             
         elif self.status == "cancel":
@@ -73,7 +76,10 @@ class ContributeModal(discord.ui.Modal):
             message_Embed.set_author(icon_url=interaction.user.display_avatar.url, name=interaction.user.display_name)
             message_Embed.set_footer(text=f"Design cancelled by {interaction.user.display_name}")
             await order_channel.send(embed=message_Embed, content=f"<:Denied:1163095002969276456> **{customer.mention}**, you're design has been cancelled.")      
-            await customer.send(embed=message_Embed, content=f"<:Denied:1163095002969276456> **{customer.display_name}**, you're design has been cancelled.") 
+            try:
+                await customer.send(embed=message_Embed, content=f"<:Denied:1163095002969276456> **{customer.display_name}**, you're design has been cancelled.") 
+            except Exception as e:
+                return await interaction.followup.send(f"<:Alert:1163094295314706552> **{interaction.user.display_name},** I couldn't message that user.", ephemeral=True) 
             existing_record = await Base_Guild.fetch_design_config(interaction.guild.id)
             designer_log_channel_id = existing_record.get("designer_log_channel_id")
             designer_role_id = existing_record.get("designer_role_id")
@@ -119,7 +125,11 @@ class DesignFinishedOptions(discord.ui.Select):
         customer = interaction.guild.get_member(data["customer_id"])
         embed = discord.Embed(description=f"Please pay **{data['price']}** Robux by clicking this [link]({selected_value}) and purchasing the item, once finished please let your designer know so that they can close this ticket!", color=discord.Color.light_embed())
         await order_channel.send(embed=embed, content=f"<:Approved:1163094275572121661> **{customer.mention},** you're design has been finished.")      
-        await customer.send(embed=embed, content=f"<:Approved:1163094275572121661> **{customer.display_name},** you're design has been finished.")      
+        try:
+            await customer.send(embed=embed, content=f"<:Approved:1163094275572121661> **{customer.display_name},** you're design has been finished.")
+        except Exception as e:
+            await interaction.followup.send(f"<:Alert:1163094295314706552> **{interaction.user.display_name},** I couldn't message that user.", ephemeral=True) 
+              
         existing_record = await Base_Guild.fetch_design_config(interaction.guild.id)
         designer_log_channel_id = existing_record.get("designer_log_channel_id")
         designer_role_id = existing_record.get("designer_role_id")

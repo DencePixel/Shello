@@ -49,7 +49,8 @@ class SHELLO(commands.AutoShardedBot):
             "Cogs.Commands.Statistics.Ping",
             "Cogs.Commands.Priority.refund",
             "Cogs.Commands.Owner.sync",
-            "Cogs.Commands.Priority.help"
+            "Cogs.Commands.Priority.help",
+            "Cogs.Commands.Priority.staff"
         ]
 
     async def is_owner(self, user: discord.User):
@@ -66,6 +67,7 @@ class SHELLO(commands.AutoShardedBot):
         await self.load_extension('jishaku')
 
     async def setup_hook(self):
+
         pass
 
 

@@ -93,7 +93,7 @@ class BaseGuild:
         Function for getting the feedback channel for a guild
 
         Returns either the channel ID or None if not found
-"""
+        """
 
         try:
             connection = pymongo.MongoClient(self.mongo_uri)
@@ -106,6 +106,32 @@ class BaseGuild:
 
             if existing_record:
                 return existing_record.get("feedback_channel")
+            else:
+                return None
+
+        except Exception as e:
+            print(f"Error fetching feedback channel: {e}")
+            return None
+        
+        
+    async def get_suggestion_channel(self, guild_id):
+        """
+        Function for getting the suggestion channel for a guild
+
+        Returns either the channel ID or None if not found
+        """
+
+        try:
+            connection = pymongo.MongoClient(self.mongo_uri)
+            db = connection[self.config["collections"]["suggestion"]["database"]]
+            suggestion_config = db[self.config["collections"]["suggestion"]["config"]]
+
+            guild_id = int(guild_id)
+
+            existing_record = suggestion_config.find_one({"guild_id": guild_id})
+
+            if existing_record:
+                return existing_record.get("suggestion_channel")
             else:
                 return None
 
@@ -147,6 +173,23 @@ class BaseGuild:
         except Exception as e:
             print("Error fetching active design:", e) 
             return None
+        
+        
+    async def fetch_guild_currency(self, guild):
+        try:
+            currency_config = self.cluster[self.config["collections"]["Customization"]["database"]][self.config["collections"]["Customization"]["config_collection"]]
+
+            result = currency_config.find_one({"guild_id": guild})
+            if result is None:
+                return "Robux"
+            
+            if result is not None:
+                return result.get("custom_currency")
+        
+        except Exception as e:
+            print("Error fetching active design:", e) 
+            return None
+
 
     async def fetch_design(self, order_id):
         try:

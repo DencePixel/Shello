@@ -60,7 +60,7 @@ class FeedbackCog(commands.Cog):
     )
     async def provide(self, ctx: commands.Context, rating: str, designer: discord.Member, *, feedback: str):
         message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** processing your request.")
-        embed = discord.Embed(title=f"Reviewed by {ctx.author.display_name}", description=f"<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Rating:** {rating}\n<:Shello_Right:1164269631062691880> **Feedback:** {feedback}", color=discord.Color.light_embed())
+        embed = discord.Embed(title=f"Reviewed by {ctx.author.display_name}", description=f"<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Rating:** **{rating}/5**\n<:Shello_Right:1164269631062691880> **Feedback:** {feedback}", color=discord.Color.light_embed())
         feedback_id = random.randint(1, 9999)
         embed.set_footer(text=f"Feedback ID: {feedback_id} | Shello Systems")
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)       

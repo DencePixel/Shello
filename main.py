@@ -29,9 +29,16 @@ from pymongo import MongoClient
 
 class SHELLO(commands.AutoShardedBot):
     def __init__(self):
+        code = os.getenv("ENVIORMENT")
+        if code.lower() == "production":
+            prefix = "!!"
+            
+        else:
+            prefix = "!!"            
         intents = discord.Intents().all()
         super().__init__(
-            command_prefix=commands.when_mentioned_or("!!"),
+
+            command_prefix=commands.when_mentioned_or(prefix),
             intents=intents,
             shard_count=shard_count
         )
@@ -50,7 +57,8 @@ class SHELLO(commands.AutoShardedBot):
             "Cogs.Commands.Priority.refund",
             "Cogs.Commands.Owner.sync",
             "Cogs.Commands.Priority.help",
-            "Cogs.Commands.Priority.staff"
+            "Cogs.Commands.Priority.staff",
+            "Cogs.Commands.Priority.suggest"
         ]
 
     async def is_owner(self, user: discord.User):
@@ -88,7 +96,7 @@ class SHELLO(commands.AutoShardedBot):
         await self.load_jishaku()
 
     async def on_connect(self):
-        activity2 = discord.Activity(type=discord.ActivityType.watching, name="Near Release!")
+        activity2 = discord.Activity(type=discord.ActivityType.playing, name="/config start || V1")
         logging.info("Connected to Discord Gateway!")
         await self.change_presence(activity=activity2)
 

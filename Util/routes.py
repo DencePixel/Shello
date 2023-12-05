@@ -21,11 +21,16 @@ class Routes(commands.Cog):
     @Server.route()
     async def get_minimal_info(self, data: ClientPayload):
         """returns info about a user"""
-        user = self.bot.get_user(int(data.user_id))
-        if not user:
-            return None
+        try:
+            user_id = int(getattr(data, "user_id", 0))
+            user = self.bot.get_user(user_id)
+            if not user:
+                return None
 
-        return user._to_minimal_user_json()
+            return user._to_minimal_user_json()
+        except Exception as e:
+            print(f"WebSocket server error in get_minimal_info: {e}")
+            return None
     
     @Server.route(name=f"hiya")
     async def hiya(self):

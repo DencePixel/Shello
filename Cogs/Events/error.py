@@ -16,10 +16,11 @@ class ErrorCog(commands.Cog):
         error_id = random.randint(1, 1000)
         embed = discord.Embed(
             title=f"Oops!",
-            description=f"Looks like an error has occurred. The developers have been notified, and they will fix me shortly!\n Error ID: {error_id}",
+            description=f"Looks like an error has occurred. The developers have been notified, and they will fix me shortly!",
             color=discord.Color.red(),
             timestamp=discord.utils.utcnow(),
         )
+        developer_embed.set_footer(text=f"Error ID: {error_id}")
 
         developer_embed = discord.Embed(description=f"```py\n{error}```")
         button = Button(style=discord.ButtonStyle.link, label="Report Error", url="https://discord.gg/FFZzpZ9MMX")
@@ -35,10 +36,11 @@ class ErrorCog(commands.Cog):
         error_id = random.randint(1, 1000)
         embed = discord.Embed(
             title=f"Oops!",
-            description=f"Looks like an error has occurred. The developers have been notified, and they will fix me shortly!\n Error ID: {error_id}",
+            description=f"Looks like an error has occurred. The developers have been notified, and they will fix me shortly!\n",
             color=discord.Color.red(),
             timestamp=discord.utils.utcnow(),
         )
+        embed.set_footer(text=f"Error ID: {error_id}")
 
         developer_embed = discord.Embed(description=f"```py\n{error}```")
         button = Button(style=discord.ButtonStyle.link, label="Report Error", url="https://discord.gg/FFZzpZ9MMX")
@@ -55,10 +57,11 @@ class ErrorCog(commands.Cog):
         error_id = random.randint(1, 1000)
         embed = discord.Embed(
             title=f"Oops!",
-            description=f"Looks like an error has occurred.\n Error ID: {error_id}",
+            description=f"Looks like an error has occurred.",
             color=discord.Color.red(),
             timestamp=discord.utils.utcnow(),
         )
+        embed.set_footer(text=f"Error ID: {error_id}")
 
         developer_embed = discord.Embed(description=f"```py\n{error}```")
         button = Button(style=discord.ButtonStyle.link, label="Report Error", url="https://discord.gg/FFZzpZ9MMX")

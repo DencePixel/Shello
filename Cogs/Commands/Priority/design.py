@@ -123,7 +123,8 @@ class DesignFinishedOptions(discord.ui.Select):
         product = data["product"]
         designer = interaction.guild.get_member(data["designer_id"])
         customer = interaction.guild.get_member(data["customer_id"])
-        embed = discord.Embed(description=f"Please pay **{data['price']}** Robux by clicking this [link]({selected_value}) and purchasing the item, once finished please let your designer know so that they can close this ticket!", color=discord.Color.light_embed())
+        currency = await Base_Guild.fetch_guild_currency(guild=interaction.guild.id)
+        embed = discord.Embed(description=f"Please pay **{data['price']}** {currency} by clicking this [link]({selected_value}) and purchasing the item, once finished please let your designer know so that they can close this ticket!", color=discord.Color.light_embed())
         await order_channel.send(embed=embed, content=f"<:Approved:1163094275572121661> **{customer.mention},** you're design has been finished.")      
         try:
             await customer.send(embed=embed, content=f"<:Approved:1163094275572121661> **{customer.display_name},** you're design has been finished.")
@@ -134,7 +135,7 @@ class DesignFinishedOptions(discord.ui.Select):
         designer_log_channel_id = existing_record.get("designer_log_channel_id")
         designer_role_id = existing_record.get("designer_role_id")
         staff_Role_id = existing_record.get("staff_role_id")
-        info_embed = discord.Embed(color=discord.Color.dark_embed(), title="Design Finished", description=f"<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Price:** {price}\n<:Shello_Right:1164269631062691880> **Product:** {product}")
+        info_embed = discord.Embed(color=discord.Color.dark_embed(), title="Design Finished", description=f"<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Price:** {price} {currency}\n<:Shello_Right:1164269631062691880> **Product:** {product}")
         embed.set_author(icon_url=interaction.user.display_avatar.url, name=interaction.user.display_avatar)
         designer_channel = interaction.guild.get_channel(designer_log_channel_id)
         await designer_channel.send(embed=info_embed)
@@ -241,19 +242,24 @@ class DesignCog(commands.Cog):
 
         try:
             order_id = f"{random.randint(1000, 9999)}"
+            currency = await Base_Guild.fetch_guild_currency(guild=ctx.guild.id)
             await Base_Guild.store_active_design(order_id=order_id, guild=ctx.guild.id, channel=ctx.channel.id, customer=customer.id, price=price, designer=ctx.author.id, product=product)
 
             embed = discord.Embed(title="Design Started", description=f"Greetings {customer.mention}! The designer {ctx.author.mention} has started your **{product}**, you will receive updates on your products within this channel and your DM's.", color=discord.Color.light_embed())
             embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
             embed.set_footer(text="Shello Systems")
 
-            info_embed = discord.Embed(color=discord.Color.dark_embed(), title="New Design", description=f"<:Shello_Right:1164269631062691880> **Designer:** {ctx.author.mention}\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Price:** {price}\n<:Shello_Right:1164269631062691880> **Product:** {product}")
+            info_embed = discord.Embed(color=discord.Color.dark_embed(), title="New Design", description=f"<:Shello_Right:1164269631062691880> **Designer:** {ctx.author.mention}\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Price:** {price} {currency}\n<:Shello_Right:1164269631062691880> **Product:** {product}")
             info_embed.set_footer(text=f"Order ID: {order_id}")
 
             await ctx.send(embed=embed) 
-            await ctx.send(embed=info_embed)
+            await ctx.channel.send(embed=info_embed)
             await designer_channel.send(embed=info_embed)
-            await customer.send(embed=info_embed, content=f"<:Approved:1163094275572121661> **{ctx.author.display_name},** your design has now been started!")
+            try:
+                await customer.send(embed=info_embed, content=f"<:Approved:1163094275572121661> **{ctx.author.display_name},** your design has now been started!")
+                
+            except Exception as e:
+                return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** I was unable to DM the customer")
         except Exception as e:
             return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** I was unable to send the messages. Please try again.")
         
@@ -288,8 +294,9 @@ class DesignCog(commands.Cog):
         customer = ctx.guild.get_member(active_design["customer_id"])
         price = active_design["price"]
         product = active_design["product"]
+        currency = await Base_Guild.fetch_guild_currency(guild=ctx.guild.id)
         
-        info_embed = discord.Embed(color=discord.Color.dark_embed(), title="Design Contribution", description=f"<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Price:** {price}\n<:Shello_Right:1164269631062691880> **Product:** {product}")
+        info_embed = discord.Embed(color=discord.Color.dark_embed(), title="Design Contribution", description=f"<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Price:** {price} {currency}\n<:Shello_Right:1164269631062691880> **Product:** {product}")
         view = discord.ui.View()
         view.add_item(DesignContributionOptions(order_id=order_id, author=ctx.author))
         await ctx.send(embed=info_embed, view=view)

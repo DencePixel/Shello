@@ -87,6 +87,7 @@ class QuotaCog(commands.Cog):
         )
         leaderboard_embed.set_footer(text=f"Activity Module")
 
+
         update_operations = []
         for designer in designers:
             user_quota = sum(1 for record in guild_design_records if record["designer_id"] == designer.id)
@@ -120,6 +121,7 @@ class QuotaCog(commands.Cog):
     
     @quota.command(name="leaderboard", description="See who has and who hasn't passed their quota")
     async def leaderboard(self, ctx: commands.Context):
+
         guild = ctx.guild
         existing_record = await Base_Guild.fetch_design_config(guild.id)
         if not existing_record:
@@ -166,7 +168,7 @@ class QuotaCog(commands.Cog):
             user = ctx.author
         existing_record = await Base_Guild.fetch_design_config(ctx.guild.id)
         if not existing_record:
-            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you need to set up the design module.")
+            return await ctx.send(f"<:Denied:1163095002969276456> **{ctx.author.name},** you need to set up the design module.")
 
         staff_role_id = existing_record.get("staff_role_id")
         designer_role_id = existing_record.get("designer_role_id")
@@ -174,12 +176,12 @@ class QuotaCog(commands.Cog):
         designer_role = self.client.get_guild(ctx.guild.id).get_role(designer_role_id)
 
         if staff_role not in ctx.author.roles:
-            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you can't use this command.")
+            return await ctx.send(f"<:Denied:1163095002969276456> **{ctx.author.name},** you can't use this command.")
 
         weekly_quota = existing_record.get("weekly_quota")
 
         if not weekly_quota:
-            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you need to set up the quota module.")
+            return await ctx.send(f"<:Denied:1163095002969276456> **{ctx.author.name},** you need to set up the quota module.")
 
         guild_design_records_cursor = self.design_records.find({"guild_id": ctx.guild.id, "accounted_for": {"$ne": True}})
         guild_design_records = list(guild_design_records_cursor)
@@ -200,14 +202,11 @@ class QuotaCog(commands.Cog):
 
 
         await ctx.send(embed=quota_embed)
-        print("User command executed successfully.")
         
     @commands.command(name="manual_leaderboard", hidden=True)
     async def test_leaderboard(self, ctx: commands.Context):
-        print("Executing test leaderboard command...")
         await self.send_leaderboard()
         await ctx.send("Test leaderboard sent.")
-        print("Test leaderboard command executed successfully.")
 
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(QuotaCog(client=client))

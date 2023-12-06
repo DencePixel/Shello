@@ -13,6 +13,10 @@ class ErrorCog(commands.Cog):
 
     @commands.Cog.listener(name="on_application_command_error")
     async def appcommanderror(self, interaction: discord.Interaction, error):
+        if isinstance(error, commands.CommandNotFound):
+            return await interaction.response.send_message(F"{denied_emoji} **{interaction.user.display_name},** this command does not exist.")
+        
+        
         error_id = random.randint(1, 1000)
         embed = discord.Embed(
             title=f"Oops!",
@@ -33,6 +37,8 @@ class ErrorCog(commands.Cog):
 
     @commands.Cog.listener(name="on_error")
     async def error(self, interaction: discord.Interaction, error):
+        if isinstance(error, commands.CommandNotFound):
+            return await interaction.response.send_message(F"{denied_emoji} **{interaction.user.display_name},** this command does not exist.")
         error_id = random.randint(1, 1000)
         embed = discord.Embed(
             title=f"Oops!",
@@ -54,6 +60,8 @@ class ErrorCog(commands.Cog):
         
     @commands.Cog.listener(name="on_command_error")
     async def cerror(self, ctx: commands.Context, error):
+        if isinstance(error, commands.CommandNotFound):
+            return await ctx.send(F"{denied_emoji} **{ctx.author.display_name},** this command does not exist.")
         error_id = random.randint(1, 1000)
         embed = discord.Embed(
             title=f"Oops!",

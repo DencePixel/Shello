@@ -1,6 +1,7 @@
 import asyncio
 import yaml
 
+
 def load_yaml_file():
     with open("config.yaml", 'r') as yaml_file:
         return yaml.safe_load(yaml_file)

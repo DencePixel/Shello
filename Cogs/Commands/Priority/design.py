@@ -256,7 +256,7 @@ class DesignCog(commands.Cog):
             await ctx.channel.send(embed=info_embed)
             await designer_channel.send(embed=info_embed)
             try:
-                await customer.send(embed=info_embed, content=f"<:Approved:1163094275572121661> **{ctx.author.display_name},** your design has now been started!")
+                await customer.send(embed=info_embed, content=f"<:Approved:1163094275572121661> **{customer.display_name},** your design has now been started!")
                 
             except Exception as e:
                 return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** I was unable to DM the customer")

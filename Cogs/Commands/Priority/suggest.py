@@ -25,13 +25,6 @@ Base_Guild = BaseGuild()
 class SuggestionCog(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-        
-        self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
-        self.db = self.cluster[self.config["collections"]["suggestion"]["database"]]
-        self.suggestion_config = self.db[self.config["collections"]["suggestion"]["config"]]
-
-
 
 
 

@@ -27,6 +27,7 @@ class HelpCog(commands.Cog):
         Choice(name='Designs', value='designs'),
         Choice(name='Payment', value='payment'),
         Choice(name='Refunds', value='refunds'),
+        Choice(name=f"Activity", value=f"quota"),
     ])
     async def help(self, ctx: commands.Context, module: str):
         if module.lower() == "designs":
@@ -55,7 +56,7 @@ class HelpCog(commands.Cog):
 
             return await ctx.send(embed=embed)
             
-        if module.lower() == "payment":
+        elif module.lower() == "payment":
             embed = discord.Embed(
                 title="Payment Module",
                 description="The Payment module allows designers to assign a payment link to any active design's they may have.\n"
@@ -77,6 +78,73 @@ class HelpCog(commands.Cog):
                 inline=False
             )
             
+            embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
+
+            return await ctx.send(embed=embed)
+        
+        elif module.lower() == "refunds":
+            embed = discord.Embed(
+                title="Refunds Module",
+                description="The Refunds Module allows users to post a refund request for any designs that were previously logged.\n"
+                            "Here is how to use the module:",
+                color=discord.Color.light_embed()
+            )
+            
+            embed.add_field(
+                name="Request a Refund",
+                value="Request a refund for a design you received.\n"
+                      "Usage: `/refund request <order_id> <reason>`",
+                inline=False
+            )
+
+            embed.add_field(
+                name="Check Refund Status",
+                value="Check the status of an active refund request.\n"
+                      "Usage: `/refund status <order_id>`",
+                inline=False
+            )
+
+            embed.add_field(
+                name="Manage Refund",
+                value="Manage a refund request.\n"
+                      "Usage: `/refund admin <order_id>`",
+                inline=False
+            )
+            
+            embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
+
+            return await ctx.send(embed=embed)
+        
+        elif module.lower() == "quota":
+            embed = discord.Embed(
+                title="Activity Module",
+                description="The Activity Module allows staff members to manage and monitor the activity of your designers.\n"
+                            "Here is how to use the module:",
+                color=discord.Color.light_embed()
+            )
+            
+            
+            embed.add_field(
+                name="Setting Up",
+                value="To use Activity you will need to setup the Activity Module within the config.\n"
+                      "Usage: `/config start > Activity`",
+                inline=False
+            )
+
+            embed.add_field(
+                name="Leaderboard",
+                value="View a weekly leaderboard showing who has and who hasn't passed their design quota.\n"
+                      "Usage: `/activity leaderboard`",
+                inline=False
+            )
+
+            embed.add_field(
+                name="User Quota",
+                value="Check if a specific user or yourself has passed the design quota.\n"
+                      "Usage: `/activity user [@mention]`",
+                inline=False
+            )
+
             embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
 
             return await ctx.send(embed=embed)

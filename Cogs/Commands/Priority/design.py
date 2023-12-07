@@ -300,7 +300,27 @@ class DesignCog(commands.Cog):
         view = discord.ui.View()
         view.add_item(DesignContributionOptions(order_id=order_id, author=ctx.author))
         await ctx.send(embed=info_embed, view=view)
-               
+
+    @design.command(name=f"find", description=f"Find a specific design")
+    async def finddesign(self, ctx: commands.Context, order_id: int):
+        message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** please wait while your request is processed.")
+            
+        order = await Base_Guild.fetch_design(order_id=order_id)        
+        if not order:
+            return await message.edit(content=f"<:shell_denied:1160456828451295232> **{ctx.author.name},** there is no order for this ID.")
+        designer = ctx.guild.get_member(order["designer_id"])
+        customer = ctx.guild.get_member(order["customer_id"])
+        price = order["price"]
+        product = order["product"]
+        
+        if ctx.author.id != designer.id:
+            if ctx.author.id != customer.id:
+                return await message.edit(content=F"<:Denied:1163095002969276456> **{ctx.author.display_name},** only the designer or customer can use this.")
+        
+        embed = discord.Embed(color=discord.Color.light_embed(), title=f"Design {order_id}", description=f"<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Price:** {price}\n<:Shello_Right:1164269631062691880> **Product:** {product}")
+        embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
+        embed.set_footer(text=f"Design {order_id}")
+        await message.edit(embed=embed, content=f"<:Approved:1163094275572121661> **{ctx.author.display_name},** here is the requested design.")
  
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(DesignCog(client))

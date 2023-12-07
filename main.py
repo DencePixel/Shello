@@ -1,23 +1,19 @@
 import sys
 sys.dont_write_bytecode = True
 import discord
-from discord import ui
-import discord.ext
 from discord.ext import commands
 import asyncio
-from datetime import datetime, timedelta
-from pytz import timezone
 from Util.Yaml import Load_yaml
-import datetime
 import pymongo
 import os
 import logging
-import threading
 from dotenv import load_dotenv
+from importlib import reload, import_module
+
 load_dotenv()
 
 logging.basicConfig(
-    level=logging.INFO,  
+    level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[
         logging.FileHandler('bot.log'),
@@ -25,19 +21,16 @@ logging.basicConfig(
     ]
 )
 
-from pymongo import MongoClient
-
 class SHELLO(commands.AutoShardedBot):
     def __init__(self):
         code = os.getenv("ENVIORMENT")
         if code.lower() == "production":
-            prefix = "!!"
-            
+            prefix = ">>"
         else:
-            prefix = "!!"            
+            prefix = ">>"
+
         intents = discord.Intents().all()
         super().__init__(
-
             command_prefix=commands.when_mentioned_or(prefix),
             intents=intents,
             shard_count=shard_count
@@ -61,10 +54,12 @@ class SHELLO(commands.AutoShardedBot):
             "Cogs.Commands.Priority.suggest"
         ]
 
+        self.cogs_last_modified = {cog: self.get_last_modified(cog) for cog in self.cogslist}
+
     async def is_owner(self, user: discord.User):
         if user.id in [
             856971748549197865,  # Mark
-            795743076520820776, # Bugsy
+            795743076520820776,  # Bugsy
         ]:
             return True
 
@@ -75,9 +70,7 @@ class SHELLO(commands.AutoShardedBot):
         await self.load_extension('jishaku')
 
     async def setup_hook(self):
-
         pass
-
 
     async def on_ready(self):
         logging.info(f'Logged in as {self.user} (ID: {self.user.id})')
@@ -118,6 +111,30 @@ class SHELLO(commands.AutoShardedBot):
 
         await self.process_commands(ctx.message)
 
+    def get_last_modified(self, cog):
+        cog_file = f"{cog.replace('.', '/')}.py"
+        return os.path.getmtime(cog_file)
+
+    async def reload_cogs(client):
+        while True:
+            try:
+                await asyncio.sleep(5) 
+
+                for cog in client.cogslist:
+                    try:
+                        last_modified = client.get_last_modified(cog)
+                        if last_modified != client.cogs_last_modified[cog]:
+                            reload_module = f"{cog}"
+                            reload(import_module(reload_module))
+                            client.cogs_last_modified[cog] = last_modified
+                            logging.info(f"Cog {cog} reloaded")
+                            await client.reload_extension(cog)
+                    except Exception as e:
+                        logging.error(f"Error reloading cog {cog}: {e}")
+
+            except asyncio.CancelledError:
+                break
+
 async def run_function(token):
     client = SHELLO()
 
@@ -126,16 +143,15 @@ async def run_function(token):
         if ctx.author.bot:
             return
 
-        return
-    
     @client.command()
-    async def prefix(self, ctx, prefix: str):
-        await self
+    async def prefix(self, ctx, new_prefix: str):
+        pass
 
     await client.setup_hook()
 
     await asyncio.gather(
         client.start(token=token),
+        SHELLO.reload_cogs(client)
     )
 
 if __name__ == "__main__":
@@ -156,4 +172,3 @@ if __name__ == "__main__":
             loop.close()
     else:
         logging.error("Invalid environment option. Please either use development or production.")
-

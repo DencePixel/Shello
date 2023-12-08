@@ -115,7 +115,7 @@ class HelpCog(commands.Cog):
 
             return await ctx.send(embed=embed)
         
-        elif module.lower() == "quota":
+        elif module.lower() == "activity":
             embed = discord.Embed(
                 title="Activity Module",
                 description="The Activity Module allows staff members to manage and monitor the activity of your designers.\n"
@@ -148,8 +148,10 @@ class HelpCog(commands.Cog):
             embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
 
             return await ctx.send(embed=embed)
-            
-        await ctx.send(content=f"<:Denied:1163095002969276456> **{ctx.author.display_name},** I can't find that module!")
+        
+        
+        else:
+            await ctx.send(content=f"<:Denied:1163095002969276456> **{ctx.author.display_name},** I can't find that module!")
 
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(HelpCog(client))

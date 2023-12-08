@@ -24,13 +24,13 @@ class ModuleSelection(discord.ui.Select):
             ]
         super().__init__(placeholder="Select an option",max_values=1,min_values=1,options=options)
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
 
         if self.values[0] == "Designs":
             if interaction.user.id != self.ctx.author.id:
                 return
             
             TheView = DesignView(ctx=self.ctx, message=self.message)
-            await interaction.response.defer()
             await self.message.edit(view=TheView, embed=None, content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the design module.")
             
             
@@ -39,7 +39,6 @@ class ModuleSelection(discord.ui.Select):
                 return
             
             view = FeedbackView(message=self.message, ctx=self.ctx, guild=interaction.guild)
-            await interaction.response.defer()
             await self.message.edit(view=view, embed=None, content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the feedback module.")
 
         if self.values[0] == "Payment Links":
@@ -48,7 +47,6 @@ class ModuleSelection(discord.ui.Select):
             
             
             view = PaymentLinksActionSelect(message=self.message, user=self.ctx)
-            await interaction.response.defer()
             await self.message.edit(embed=None, view=view, content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the payment module.")
             
         if self.values[0] == "Quota":
@@ -56,20 +54,17 @@ class ModuleSelection(discord.ui.Select):
                 return
             
             
-            await interaction.response.defer()
             await self.message.edit(view=ActivityModuleSelectView(timeout=None, ctx=self.ctx, message=self.message), content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the activity module.")
         
         if self.values[0] == "Welcome":
             if interaction.user.id != self.ctx.author.id:
                 return
-            await interaction.response.defer()
             await self.message.edit(view=WelcomeModuleSelectionView(timeout=None, ctx=self.ctx, message=self.message), content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the welcome module.")
             
         if self.values[0] == "Suggestions":
             if interaction.user.id != self.ctx.author.id:
                 return
             
-            await interaction.response.defer()
             
             view = discord.ui.View(timeout=None)
             view.add_item(SuggestionChannel(self.ctx, message=self.message))
@@ -81,7 +76,6 @@ class ModuleSelection(discord.ui.Select):
         if self.values[0] == "Customization":
             if interaction.user.id != self.ctx.author.id:
                 return
-            await interaction.response.defer()
             await self.message.edit(view=CustomizationModuleView(timeout=None, ctx=self.ctx, message=self.message), content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the customization module.")
             
             

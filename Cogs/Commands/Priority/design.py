@@ -304,7 +304,6 @@ class DesignCog(commands.Cog):
     @design.command(name=f"find", description=f"Find a specific design")
     async def finddesign(self, ctx: commands.Context, order_id: int):
         message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** please wait while your request is processed.")
-            
         order = await Base_Guild.fetch_design(order_id=order_id)        
         if not order:
             return await message.edit(content=f"<:shell_denied:1160456828451295232> **{ctx.author.name},** there is no order for this ID.")

@@ -60,6 +60,7 @@ class SHELLO(commands.AutoShardedBot):
         if user.id in [
             856971748549197865,  # Mark
             795743076520820776,  # Bugsy
+            937122696003747930, # Moyai
         ]:
             return True
 

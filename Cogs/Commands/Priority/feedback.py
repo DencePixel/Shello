@@ -73,7 +73,13 @@ class FeedbackCog(commands.Cog):
         await message.edit(content=f"<:Approved:1163094275572121661> **{ctx.author.display_name},** succesfully sent your feedback!")
         
         feedback_channel = ctx.guild.get_channel(feedback_channel_id)
-        message = await feedback_channel.send(embed=embed, content=f"<:Approved:1163094275572121661> **{designer.mention},** you have recieved feedback!")
+        try:
+            
+            message = await feedback_channel.send(embed=embed, content=f"<:Approved:1163094275572121661> **{designer.mention},** you have recieved feedback!")
+        except:
+            await message.edit(content=f"<:Alert:1163094295314706552> **{ctx.author.display_name},** I can't send a message to that channel.")
+            
+            
         
         feedback_data = {
             "guild_id": ctx.guild.id,

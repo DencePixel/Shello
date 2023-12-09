@@ -75,9 +75,9 @@ class ContributeModal(discord.ui.Modal):
             message_Embed = discord.Embed(title=f"Design Cancelled", description=f"{self.Message.value}", color=discord.Color.dark_embed())
             message_Embed.set_author(icon_url=interaction.user.display_avatar.url, name=interaction.user.display_name)
             message_Embed.set_footer(text=f"Design cancelled by {interaction.user.display_name}")
-            await order_channel.send(embed=message_Embed, content=f"<:Denied:1163095002969276456> **{customer.mention}**, you're design has been cancelled.")      
+            await order_channel.send(embed=message_Embed, content=f"<:Denied:1163095002969276456> **{customer.mention}**, your design has been cancelled.")      
             try:
-                await customer.send(embed=message_Embed, content=f"<:Denied:1163095002969276456> **{customer.display_name}**, you're design has been cancelled.") 
+                await customer.send(embed=message_Embed, content=f"<:Denied:1163095002969276456> **{customer.display_name}**, your design has been cancelled.") 
             except Exception as e:
                 return await interaction.followup.send(f"<:Alert:1163094295314706552> **{interaction.user.display_name},** I couldn't message that user.", ephemeral=True) 
             existing_record = await Base_Guild.fetch_design_config(interaction.guild.id)

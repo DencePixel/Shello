@@ -51,7 +51,8 @@ class SHELLO(commands.AutoShardedBot):
             "Cogs.Commands.Owner.sync",
             "Cogs.Commands.Priority.help",
             "Cogs.Commands.Priority.staff",
-            "Cogs.Commands.Priority.suggest"
+            "Cogs.Commands.Priority.suggest",
+            "Cogs.Commands.Priority.alerts"
         ]
 
         self.cogs_last_modified = {cog: self.get_last_modified(cog) for cog in self.cogslist}
@@ -128,7 +129,6 @@ class SHELLO(commands.AutoShardedBot):
                             reload_module = f"{cog}"
                             reload(import_module(reload_module))
                             client.cogs_last_modified[cog] = last_modified
-                            logging.info(f"Cog {cog} reloaded")
                             await client.reload_extension(cog)
                     except Exception as e:
                         logging.error(f"Error reloading cog {cog}: {e}")

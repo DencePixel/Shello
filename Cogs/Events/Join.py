@@ -41,6 +41,10 @@ class Join(commands.Cog):
         cluster = pymongo.MongoClient(self.mongo_uri)
         db = cluster[self.config["collections"]["welcome"]["database"]]
         welcome_config = db[self.config["collections"]["welcome"]["collection"]]
+        
+        alertsdb = cluster[self.config["collections"]["Alerts"]["database"]]
+        alertsconfig = alertsdb[self.config["collections"]["Alerts"]["config"]]
+        alertslogs = alertsdb[self.config["collections"]["Alerts"]["logs"]]
 
         config = welcome_config.find_one({"guild_id": guild_id})
         if config is None:
@@ -79,7 +83,27 @@ class Join(commands.Cog):
                     try:
                         await member.add_roles(role)
                     except:
-                        return
+                        pass
+                    
+        
+        alerts_config = alertsconfig.find_one({"guild_id": guild_id})
+        if not alerts_config:
+            return
+                  
+        filter_criteria = {"target_id": member.id}
+
+        count = alertslogs.count_documents(filter_criteria)
+        if count > 1:
+            embed = discord.Embed(title=f"Suspicious Account", description=f"**Account Information**\n<:Shello_Right:1164269631062691880> **User:** {member.mention}\n<:Shello_Right:1164269631062691880> **ID:** {member.id}\n\n**Reason**\n<:Shello_Right:1164269631062691880> **Reason:** ``User exceeds normal amount of alert.``\n<:Shello_Right:1164269631062691880> **Alerts Count:** ``{count}``", color=discord.Color.light_embed())
+            embed.set_footer(text=f"Suspicious Account Flagged")
+            embed.set_thumbnail(url=member.display_avatar.url)
+            channel_id = alerts_config.get("alert_channel")
+            channel = member.guild.get_channel(channel_id)
+            try:
+                await channel.send(embed=embed, content=f"<:Alert:1163094295314706552> I have flagged this account as suspicious.")
+            except:
+                return
+            
                     
 
         

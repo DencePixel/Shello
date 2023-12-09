@@ -51,10 +51,16 @@ collections:
   Customization:
     database: 'Customization'
     config_collection: 'Customization Config'
+  
+  Alerts:
+    database: 'Alerts'
+    config: 'Config'  
+    logs: 'Alert Logs'
 """
         yaml_config_file = open("config.yaml", "a")
         yaml_config_file.write(template_content)
         result = yaml.safe_load(template_content)
+        logging.info("I have succesfully inserted base data into Config.yaml")
 
     return result
             

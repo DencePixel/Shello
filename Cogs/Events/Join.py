@@ -37,6 +37,7 @@ class Join(commands.Cog):
     async def on_member_join(self, member):
             
         guild_id = member.guild.id
+        
 
         cluster = pymongo.MongoClient(self.mongo_uri)
         db = cluster[self.config["collections"]["welcome"]["database"]]
@@ -51,10 +52,12 @@ class Join(commands.Cog):
             return
 
         welcome_message = config.get("welcome_message")
-        welcome_channel_id = config.get("welcome_channel_id")
+        welcome_channel_id = config.get("welcome_channel")
 
         if not welcome_channel_id:
             return
+        
+    
 
 
         replacements = {
@@ -70,9 +73,7 @@ class Join(commands.Cog):
             '!guild.id!': str(member.guild.id),
             '!guild.member_count!': str(member.guild.member_count)
         }
-
         welcome_message = await replace_variable_welcome(welcome_message, replacements)
-
         welcome_channel = member.guild.get_channel(welcome_channel_id)
         if welcome_channel:
             await welcome_channel.send(welcome_message)

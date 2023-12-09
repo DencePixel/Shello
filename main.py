@@ -27,7 +27,7 @@ class SHELLO(commands.AutoShardedBot):
         if code.lower() == "production":
             prefix = ">>"
         else:
-            prefix = ">>"
+            prefix = ">"
 
         intents = discord.Intents().all()
         super().__init__(

@@ -10,9 +10,15 @@ from Util.functions import replace_variable_welcome
 from Util.Yaml import Load_yaml
 load_dotenv()
 
+class StaffJoinedButton(discord.ui.Button):
+    def __init__(self, staff_member):
+        self.staff_member = staff_member
+        super().__init__(style=discord.ButtonStyle.gray, label="Shello Staff", custom_id=f"persistent_view:staff_joined", emoji=f"<:shello:1179901706952257706>")
 
-
-
+    async def callback(self, interaction: discord.Interaction):
+        embed = discord.Embed(color=discord.Color.light_embed(),title=f"Staff Member", description=f"This user is a member of the Shello staff team. They may be joining to investigate an issue or participate in your community, we are humans that enjoy communities aswell.")
+        embed.set_author(icon_url=self.staff_member.display_avatar.url, name=self.staff_member.display_name)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 class Join(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
@@ -26,7 +32,7 @@ class Join(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         async with aiohttp.ClientSession() as session:
-            embed = discord.Embed(description=f"``>`` {guild.name}\n``>`` {guild.id}\n``>`` {guild.owner.mention}", color=discord.Color(2829617))
+            embed = discord.Embed(description=f"``>`` {guild.name}\n``>`` {guild.id}\n``>`` {guild.owner.mention}\n``>`` {guild.member_count}", color=discord.Color(2829617))
             webhook = discord.Webhook.from_url(os.getenv("BOT_JOINS_WEBHOOK"), session=session)
             await webhook.send(embed=embed)
         
@@ -37,6 +43,23 @@ class Join(commands.Cog):
     async def on_member_join(self, member):
             
         guild_id = member.guild.id
+        
+        guild = self.client.get_guild(1160173970675486760)
+        guild_member = guild.get_member(member.id)
+        if guild_member:
+            role = guild.get_role(1160175200927752222)
+            if role:
+                if role in guild_member.roles:
+                    view = discord.ui.View()
+                    view.add_item(StaffJoinedButton(staff_member=guild_member))
+                    
+                else:
+                    view = None
+            else:
+                view = None
+                
+        else:
+            view = None
         
 
         cluster = pymongo.MongoClient(self.mongo_uri)
@@ -76,7 +99,7 @@ class Join(commands.Cog):
         welcome_message = await replace_variable_welcome(welcome_message, replacements)
         welcome_channel = member.guild.get_channel(welcome_channel_id)
         if welcome_channel:
-            await welcome_channel.send(welcome_message)
+            await welcome_channel.send(content=welcome_message, view=view)
             role_id = config.get("join_role")
             if role_id:
                 role = member.guild.get_role(role_id)

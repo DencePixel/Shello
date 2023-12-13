@@ -17,7 +17,7 @@ class ErrorCog(commands.Cog):
             return
         
         
-        error_id = random.randint(1, 1000)
+        error_id = random.randint(1, 99999999999)
         embed = discord.Embed(
             title=f"Oops!",
             description=f"Looks like an error has occurred. The developers have been notified, and they will fix me shortly!",

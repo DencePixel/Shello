@@ -21,7 +21,7 @@ While using Shello Bot, you agree not to:
 
 ## 4. Privacy
 
-We respect your privacy. Please refer to our [Privacy Policy](link-to-privacy-policy) for information on how we collect, use, and disclose personal information.
+We respect your privacy. Please refer to our [Privacy Policy](https://github.com/DencePixel/Shello/blob/main/Privacy.md) for information on how we collect, use, and disclose personal information.
 
 ## 5. Limitation of Liability
 

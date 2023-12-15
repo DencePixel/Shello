@@ -15,8 +15,8 @@ To add Shello to your Discord server, simply follow these steps:
 
 ## Usage
 
-- Prefix: `$$`
-- Type `/help` or ``$$help`` to get a list of available commands and how to use them
+- Prefix: `!!`
+- Type `/help module` or ``!!help module`` to get a list of available commands and how to use them
 - Use various commands to enhance your design community
 
 ## License

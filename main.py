@@ -9,7 +9,6 @@ import os
 import logging
 from dotenv import load_dotenv
 from importlib import reload, import_module
-from Cogs.Commands.Priority.leaves import LeaveRequestButtons
 from Cogs.Events.Join import StaffJoinedButton
 
 load_dotenv()
@@ -94,7 +93,6 @@ class SHELLO(commands.AutoShardedBot):
                     logging.info("IPC Cog not loaded. Reason: Development ENV")
 
         await self.load_jishaku()
-        self.add_view(LeaveRequestButtons())
     async def on_connect(self):
         activity2 = discord.Activity(type=discord.ActivityType.playing, name="/config start || V1")
         logging.info("Connected to Discord Gateway!")

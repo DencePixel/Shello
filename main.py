@@ -30,7 +30,7 @@ class SHELLO(commands.AutoShardedBot):
         else:
             prefix = ">"
         intents = discord.Intents.default()
-        intents.message_content = True
+        intents.members = True
         intents.message_content = False
         intents.presences = False
         super().__init__(

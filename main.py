@@ -9,6 +9,8 @@ import os
 import logging
 from dotenv import load_dotenv
 from importlib import reload, import_module
+from Cogs.Commands.Priority.leaves import LeaveRequestButtons
+from Cogs.Events.Join import StaffJoinedButton
 
 load_dotenv()
 
@@ -28,8 +30,10 @@ class SHELLO(commands.AutoShardedBot):
             prefix = ">>"
         else:
             prefix = ">"
-
-        intents = discord.Intents().all()
+        intents = discord.Intents.default()
+        intents.message_content = True
+        intents.message_content = False
+        intents.presences = False
         super().__init__(
             command_prefix=commands.when_mentioned_or(prefix),
             intents=intents,
@@ -52,7 +56,8 @@ class SHELLO(commands.AutoShardedBot):
             "Cogs.Commands.Priority.help",
             "Cogs.Commands.Priority.staff",
             "Cogs.Commands.Priority.suggest",
-            "Cogs.Commands.Priority.alerts"
+            "Cogs.Commands.Priority.alerts",
+            "Cogs.Commands.Priority.leaves"
         ]
 
         self.cogs_last_modified = {cog: self.get_last_modified(cog) for cog in self.cogslist}
@@ -89,7 +94,7 @@ class SHELLO(commands.AutoShardedBot):
                     logging.info("IPC Cog not loaded. Reason: Development ENV")
 
         await self.load_jishaku()
-
+        self.add_view(LeaveRequestButtons())
     async def on_connect(self):
         activity2 = discord.Activity(type=discord.ActivityType.playing, name="/config start || V1")
         logging.info("Connected to Discord Gateway!")

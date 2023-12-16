@@ -55,9 +55,8 @@ class SHELLO(commands.AutoShardedBot):
             "Cogs.Commands.Priority.help",
             "Cogs.Commands.Priority.staff",
             "Cogs.Commands.Priority.suggest",
-            "Cogs.Commands.Priority.alerts",
-            "Cogs.Commands.Priority.leaves"
-        ]
+            "Cogs.Commands.Priority.alerts"
+            ]
 
         self.cogs_last_modified = {cog: self.get_last_modified(cog) for cog in self.cogslist}
 

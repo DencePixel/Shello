@@ -1,5 +1,6 @@
+
 mongodb:
-  uri: ''
+  uri: 
 
 collections:
   payment:
@@ -10,7 +11,8 @@ collections:
     database: ''
     config_collection: ''
     log_collection: ''
-    feedback_collection: ''
+    feedback_config: ''
+    feedback_records: ''
     active_designs_collection: ''
     quota_collection: ''
     refund_collection: ''
@@ -19,17 +21,25 @@ collections:
     database: ''
     collection: ''
 
+  suggestion:
+    database: ''
+    config: ''  
+
   Roblox:
     database: ''
     accounts_collection: ''
-
+    
+  Leaves:
+    database: ''
+    config: ''
+    active: ''
+    overall: ''
+     
   Customization:
     database: ''
-    prefixes: ''
-
+    config_collection: ' '
   
-  
-
-           
-
-
+  Alerts:
+    database: ''
+    config: ''  
+    logs: ''

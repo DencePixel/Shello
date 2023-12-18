@@ -93,8 +93,8 @@ class QuotaCog(commands.Cog):
         for designer in designers:
             user_quota = sum(1 for record in guild_design_records if record["designer_id"] == designer.id)
             designs_to_mark = [record["order_id"] for record in guild_design_records if record["designer_id"] == designer.id]
-            active_leaves = self.leaves_db(self.config["collections"]["leaves"]["active"])
-            overall_leaves = self.leaves_db(self.config["collections"]["leaves"]["overall"])
+            active_leaves = self.leaves_db(self.config["collections"]["Leaves"]["active"])
+            overall_leaves = self.leaves_db(self.config["collections"]["Leaves"]["overall"])
             loa_status = active_leaves.find_one({"guild_id": guild.id,"author_id": designer.id, "status": "active"})
             if loa_status:
                 loa_overall_status = "True"

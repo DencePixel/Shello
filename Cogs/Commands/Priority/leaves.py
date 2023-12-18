@@ -276,7 +276,7 @@ class LoaCog(commands.Cog):
             config = self.leaves_config.find_one({"guild_id": guild_id})
             if not config:
                 return
-            role_id = config["leaves_role"]
+            role_id = config["leave_role"]
             if role_id:
                 role = guild.get_role(role_id)
                 if role:

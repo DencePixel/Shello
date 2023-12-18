@@ -47,7 +47,13 @@ collections:
   Roblox:
     database: 'Roblox'
     accounts_collection: 'accounts'
-
+    
+  Leaves:
+    database: 'Leaves'
+    config: 'config'
+    active: 'active'
+    overall: 'overall'
+     
   Customization:
     database: 'Customization'
     config_collection: 'Customization Config'

@@ -10,6 +10,7 @@ import logging
 from dotenv import load_dotenv
 from importlib import reload, import_module
 from Cogs.Events.Join import StaffJoinedButton
+from Cogs.Commands.Priority.leaves import LeaveRequestButtons
 
 load_dotenv()
 
@@ -55,10 +56,16 @@ class SHELLO(commands.AutoShardedBot):
             "Cogs.Commands.Priority.help",
             "Cogs.Commands.Priority.staff",
             "Cogs.Commands.Priority.suggest",
-            "Cogs.Commands.Priority.alerts"
+            "Cogs.Commands.Priority.alerts",
+            "Cogs.Commands.Priority.leaves"
             ]
 
         self.cogs_last_modified = {cog: self.get_last_modified(cog) for cog in self.cogslist}
+        view = discord.ui.View(timeout=None)
+        view.add_item(StaffJoinedButton())
+        self.add_view(view)
+        self.add_view(LeaveRequestButtons())
+
 
     async def is_owner(self, user: discord.User):
         if user.id in [
@@ -73,7 +80,6 @@ class SHELLO(commands.AutoShardedBot):
     async def load_jishaku(self):
         await self.wait_until_ready()
         await self.load_extension('jishaku')
-
     async def setup_hook(self):
         pass
 
@@ -85,11 +91,8 @@ class SHELLO(commands.AutoShardedBot):
                 logging.info(f"Cog {ext} loaded")
 
             if ext == "Util.routes":
-                if os.getenv("ENVIORMENT").lower() == "production":
-                    logging.info("IPC Cog loaded. Reason: Production ENV")
-                    await self.load_extension(ext)
-                if os.getenv("ENVIORMENT").lower() == "development":
-                    logging.info("IPC Cog not loaded. Reason: Development ENV")
+                logging.info("IPC Cog loaded.")
+                await self.load_extension(ext)
 
         await self.load_jishaku()
     async def on_connect(self):

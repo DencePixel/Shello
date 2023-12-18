@@ -36,6 +36,7 @@ class QuotaCog(commands.Cog):
         self.design_Db = self.cluster[self.config["collections"]["design"]["database"]]
         self.design_config = self.design_Db[self.config["collections"]["design"]["config_collection"]]
         self.design_records = self.design_Db[self.config["collections"]["design"]["log_collection"]]
+        self.leaves_db = self.cluster[self.config["collections"]["Leaves"]["database"]]
 
 
     @tasks.loop(minutes=1)
@@ -92,15 +93,22 @@ class QuotaCog(commands.Cog):
         for designer in designers:
             user_quota = sum(1 for record in guild_design_records if record["designer_id"] == designer.id)
             designs_to_mark = [record["order_id"] for record in guild_design_records if record["designer_id"] == designer.id]
+            active_leaves = self.leaves_db(self.config["collections"]["leaves"]["active"])
+            overall_leaves = self.leaves_db(self.config["collections"]["leaves"]["overall"])
+            loa_status = active_leaves.find_one({"guild_id": guild.id,"author_id": designer.id, "status": "active"})
+            if loa_status:
+                loa_overall_status = "True"
+            else:
+                loa_overall_status = "False"
 
             if user_quota >= weekly_quota:
-                leaderboard_embed.description += f"\n\n**User:** {designer.mention}\n**Passed:** ``True``"
+                leaderboard_embed.description += f"\n\n**User:** {designer.mention}\n**Passed:** ``True``\n**On LOA:** ``{loa_overall_status}``"
                 update_operations.extend([
                     self.design_records.update_one({"order_id": design_id, "accounted_for": {"$ne": True}}, {"$set": {"accounted_for": True}}) for design_id in designs_to_mark
                 ])
             else:
                 designs_needed = weekly_quota - user_quota
-                leaderboard_embed.description += f"\n\n**User:** {designer.mention}\n**Passed:** ``False``\n**Designs Left:** ``{designs_needed}``"
+                leaderboard_embed.description += f"\n\n**User:** {designer.mention}\n**Passed:** ``False``\n**Designs Left:** ``{designs_needed}``\n**On LOA:** ``{loa_overall_status}``"
 
         if update_operations:
             try:
@@ -152,13 +160,20 @@ class QuotaCog(commands.Cog):
         leaderboard_embed.set_footer(text=f"Activity Module")
 
         for designer in designers:
+            active_leaves = self.leaves_db(self.config["collections"]["Leaves"]["active"])
+            overall_leaves = self.leaves_db(self.config["collections"]["Leaves"]["overall"])
+            loa_status = active_leaves.find_one({"guild_id": guild.id,"author_id": designer.id, "status": "active"})
+            if loa_status:
+                loa_overall_status = "True"
+            else:
+                loa_overall_status = "False"
             user_quota = sum(1 for record in guild_design_records if record["designer_id"] == designer.id)
 
             if user_quota >= weekly_quota:
-                leaderboard_embed.description += f"\n\n**User:** {designer.mention}\n**Passed:** ``True``"
+                leaderboard_embed.description += f"\n\n**User:** {designer.mention}\n**Passed:** ``True``\n**On LOA:** {loa_overall_status}"
             else:
                 designs_needed = weekly_quota - user_quota
-                leaderboard_embed.description += f"\n\n**User:** {designer.mention}\n**Passed:** ``False``\n**Designs Left:** ``{designs_needed}``"
+                leaderboard_embed.description += f"\n\n**User:** {designer.mention}\n**Passed:** ``False``\n**Designs Left:** ``{designs_needed}``\n**On LOA:** {loa_overall_status}"
 
         await ctx.send(embed=leaderboard_embed)
         
@@ -191,15 +206,21 @@ class QuotaCog(commands.Cog):
         )
         quota_embed.set_footer(text=f"Activity Module")
         quota_embed.set_author(icon_url=user.display_avatar.url, name=user.display_name)
+        active_leaves = self.leaves_db(self.config["collections"]["Leaves"]["active"])
+        overall_leaves = self.leaves_db(self.config["collections"]["Leaves"]["overall"])
+        loa_status = active_leaves.find_one({"guild_id": ctx.guild.id,"author_id": user.id, "status": "active"})
+        if loa_status:
+            loa_overall_status = "True"
+        else:
+            oa_overall_status = "False"
 
         user_quota = sum(1 for record in guild_design_records if record["designer_id"] == user.id)
 
         if user_quota >= weekly_quota:
-            quota_embed.description = f"\n\n**User:** {user.mention}\n**Passed:** ``True``"
+            quota_embed.description += f"\n\n**User:** {user.mention}\n**Passed:** ``True``\n**On LOA:** {loa_overall_status}"
         else:
             designs_needed = weekly_quota - user_quota
-            quota_embed.description = f"\n\n**User:** {user.mention}\n**Passed:** ``False``\n**Designs Left:** ``{designs_needed}``"
-
+            quota_embed.description += f"\n\n**User:** {user.mention}\n**Passed:** ``False``\n**Designs Left:** ``{designs_needed}``\n**On LOA:** {loa_overall_status}"
 
         await ctx.send(embed=quota_embed)
         

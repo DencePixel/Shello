@@ -3,7 +3,7 @@ from Cogs.emojis import approved_emoji, denied_emoji
 
 class GlobalFinishedButton(discord.ui.Button):
     def __init__(self, ctx, message):
-        super().__init__(style=discord.ButtonStyle.gray, label="Return", row=2)
+        super().__init__(style=discord.ButtonStyle.gray, label="Return", row=4)
         self.ctx = ctx
         self.message = message
 

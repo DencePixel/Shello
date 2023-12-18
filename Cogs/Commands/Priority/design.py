@@ -8,15 +8,64 @@ from discord.interactions import Interaction
 from pymongo import MongoClient
 from DataModels.guild import BaseGuild
 import os
+
 from DataModels.user import BaseUser
 from dotenv import load_dotenv
 load_dotenv()
 import random
+from Cogs.emojis import approved_emoji, denied_emoji, alert_emoji
 from Util.Yaml import Load_yaml
 
 
 Base_User = BaseUser()
 Base_Guild = BaseGuild()
+
+class OrderPaidButton(discord.ui.Button):
+    def __init__(self, author, message, order_id):
+        super().__init__(style=discord.ButtonStyle.gray, label="Paid")
+        self.message = message
+        self.order_id = order_id
+        
+        self.author = author
+    async def callback(self, interaction: discord.Interaction):
+        from Cogs.Commands.Config.view import SelectView
+
+        if self.author.id != interaction.user.id:
+            return await interaction.response.send_message(f"{denied_emoji} **{interaction.user.display_name},** this is not your view.", ephemeral=True)
+        
+
+        await interaction.response.defer()
+        
+        order = await Base_Guild.fetch_active_design(self.order_id)
+        if not order:
+            pass
+        
+        
+        customer = order.get("customer_id")
+        designer = order.get("designer_id")
+        if interaction.user.id != designer:
+            return await self.message.edit(content=f"{denied_emoji} **{interaction.user.mention},** only the designer can do this.", view=None, embed=None)
+        price = order.get("price")
+        product = order.get("product")
+        
+        embed = discord.Embed(title=f"Order Finished",color=discord.Color.light_embed() ,description=f"The following order has been marked as paid.\n\n**Order {self.order_id}**\n<:Shello_Right:1164269631062691880> **Customer:** <@!{customer}>\n<:Shello_Right:1164269631062691880> **Designer:** <@!{designer}>\n<:Shello_Right:1164269631062691880> **Product:** {product}\n<:Shello_Right:1164269631062691880> **Price:** {price}", timestamp=discord.utils.utcnow())
+        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
+        
+        self.disabled = True
+            
+        await self.message.edit(view=self.view, embed=embed, content=f"{approved_emoji} Marked as paid by **{interaction.user.display_name}.**")
+        existing_record = await Base_Guild.fetch_design_config(interaction.guild.id)
+        designer_log_channel_id = existing_record.get("designer_log_channel_id")
+        designer_channel = interaction.guild.get_channel(designer_log_channel_id)
+        await designer_channel.send(embed=embed)
+        cancel = await Base_Guild.cancel_active_design(order_id=self.order_id)
+        if cancel is True:
+            log = await Base_Guild.update_design_logs(guild=interaction.guild.id,order_id=self.order_id, designer_id=designer, customer_id=customer, price=price, product=product)
+            await interaction.followup.send(f"<:Approved:1163094275572121661> **{interaction.user.display_name},** succesfully finished the design.", ephemeral=True)      
+            
+
+        
+        
 
 class ContributeModal(discord.ui.Modal):
     def __init__(self, question_name, title, question_placeholder,status, order_id):
@@ -40,7 +89,7 @@ class ContributeModal(discord.ui.Modal):
     async def on_submit(self, interaction: discord.Interaction):
         data = await Base_Guild.fetch_active_design(self.order_id)
         if not data:
-            return await interaction.response.send_message(f"<:shell_denied:1160456828451295232> **{interaction.user.display_name},** I can't find that Order!", ephemeral=True)
+            return await interaction.response.send_message(f"{denied_emoji} **{interaction.user.display_name},** I can't find that Order!", ephemeral=True)
         if self.status == "update":
 
                 
@@ -123,30 +172,15 @@ class DesignFinishedOptions(discord.ui.Select):
         product = data["product"]
         designer = interaction.guild.get_member(data["designer_id"])
         customer = interaction.guild.get_member(data["customer_id"])
-        currency = await Base_Guild.fetch_guild_currency(guild=interaction.guild.id)
-        embed = discord.Embed(description=f"Please pay **{data['price']}** {currency} by clicking this [link]({selected_value}) and purchasing the item, once finished please let your designer know so that they can close this ticket!", color=discord.Color.light_embed())
-        await order_channel.send(embed=embed, content=f"<:Approved:1163094275572121661> **{customer.mention},** you're design has been finished.")      
-        try:
-            await customer.send(embed=embed, content=f"<:Approved:1163094275572121661> **{customer.display_name},** you're design has been finished.")
-        except Exception as e:
-            await interaction.followup.send(f"<:Alert:1163094295314706552> **{interaction.user.display_name},** I couldn't message that user.", ephemeral=True) 
-              
-        existing_record = await Base_Guild.fetch_design_config(interaction.guild.id)
-        designer_log_channel_id = existing_record.get("designer_log_channel_id")
-        designer_role_id = existing_record.get("designer_role_id")
-        staff_Role_id = existing_record.get("staff_role_id")
-        info_embed = discord.Embed(color=discord.Color.dark_embed(), title="Design Finished", description=f"<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Price:** {price} {currency}\n<:Shello_Right:1164269631062691880> **Product:** {product}")
-        embed.set_author(icon_url=interaction.user.display_avatar.url, name=interaction.user.display_avatar)
-        designer_channel = interaction.guild.get_channel(designer_log_channel_id)
-        await designer_channel.send(embed=info_embed)
-        cancel = await Base_Guild.cancel_active_design(order_id=self.order_id)
-        if cancel is True:
-            log = await Base_Guild.update_design_logs(guild=interaction.guild.id,order_id=self.order_id, designer_id=designer.id, customer_id=customer.id, price=price, product=product)
-            await interaction.followup.send(f"<:Approved:1163094275572121661> **{interaction.user.display_name},** succesfully finished the design.", ephemeral=True)      
-            
+        embed = discord.Embed(title=f"Order Finished",color=discord.Color.light_embed() ,description=f"The following order has been marked as finished.\n\n**Order {self.order_id}**\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Product:** {product}\n<:Shello_Right:1164269631062691880> **Price:** {price}", timestamp=discord.utils.utcnow())
+        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
+        message = await order_channel.send(embed=embed, content=f"<:Approved:1163094275572121661> **{customer.mention},** please pay for your design.")      
+        view = discord.ui.View(timeout=180)
+        item = discord.ui.Button(style=discord.ButtonStyle.gray, label="Pay Here", url=selected_value) 
+        view.add_item(OrderPaidButton(message=message, order_id=self.order_id, author=self.author))
+        view.add_item(item)
 
-        
-        
+        await message.edit(view=view)
     
 class DesignContributionOptions(discord.ui.Select):
     def __init__(self, author, order_id):
@@ -163,15 +197,15 @@ class DesignContributionOptions(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if self.author.id != interaction.user.id:
-            return await interaction.response.send_message(f"<:shell_denied:1160456828451295232> **{interaction.user.display_name},** this is not your view.", ephemeral=True)
+            return await interaction.response.send_message(f"{denied_emoji} **{interaction.user.display_name},** this is not your view.", ephemeral=True)
         
         data = await Base_Guild.fetch_active_design(self.order_id)
         order_channel = interaction.guild.get_channel(data['channel'])
         designer = interaction.guild.get_member(data["designer_id"])
         if not order_channel:
-            return await interaction.response.send_message(f"<:shell_denied:1160456828451295232> **{interaction.user.display_name},** I can't find the order channel.", ephemeral=True)
+            return await interaction.response.send_message(f"{denied_emoji} **{interaction.user.display_name},** I can't find the order channel.", ephemeral=True)
         if interaction.user.id != designer.id:
-            return await interaction.response.send_message(f"<:shell_denied:1160456828451295232> **{interaction.user.display_name},** only the designer can use this view.", ephemeral=True)
+            return await interaction.response.send_message(f"{denied_emoji} **{interaction.user.display_name},** only the designer can use this view.", ephemeral=True)
         
         if self.values[0] == "update":
             await interaction.response.send_modal(ContributeModal(question_name=f"Message", question_placeholder=f"Message", status="update", title=f"Update Order", order_id=self.order_id))
@@ -217,12 +251,13 @@ class DesignCog(commands.Cog):
 
 
 
-    @commands.hybrid_group(name="design", description=f"Design based commands")
+    @commands.hybrid_group(name="order", description=f"Design based commands")
     async def design(self, ctx):
         pass
     
     
     @design.command(name="start", description="Start the process of creating a design")
+    @commands.guild_only()
     async def start(self, ctx: commands.Context, customer: discord.Member, price: int, *, product: str):
         if ctx.interaction:
             await ctx.interaction.response.defer()
@@ -230,7 +265,7 @@ class DesignCog(commands.Cog):
         existing_record = await Base_Guild.fetch_design_config(guild_id)
 
         if not existing_record:
-            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you need to set up the design module. ")
+            return await ctx.send(f"{denied_emoji} **{ctx.author.name},** you need to set up the design module. ")
         designer_log_channel_id = existing_record.get("designer_log_channel_id")
         designer_role_id = existing_record.get("designer_role_id")
         staff_Role_id = existing_record.get("staff_role_id")
@@ -238,32 +273,30 @@ class DesignCog(commands.Cog):
         designer_role = self.client.get_guild(ctx.guild.id).get_role(designer_role_id)
 
         if designer_channel is None or designer_role is None or designer_role not in ctx.author.roles:
-            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you can't use this command.")
+            return await ctx.send(f"{denied_emoji} **{ctx.author.name},** you can't use this command.")
 
+        order_id = f"{random.randint(1000, 9999)}"
+        currency = await Base_Guild.fetch_guild_currency(guild=ctx.guild.id)
+        await Base_Guild.store_active_design(order_id=order_id, guild=ctx.guild.id, channel=ctx.channel.id, customer=customer.id, price=price, designer=ctx.author.id, product=product)
+
+        embed = discord.Embed(title="Order Started", description=f"Greetings {customer.mention}! The designer {ctx.author.mention} has started your **{product}**, you will receive updates on your products within this channel and your DM's.", color=discord.Color.light_embed())
+        embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
+        embed.set_footer(text="Shello Systems")
+
+        info_embed = discord.Embed(color=discord.Color.dark_embed(), title="New Design", description=f"**Order {order_id}**\n<:Space:1182833159579115530><:Shello_Right:1164269631062691880> **Designer:** {ctx.author.mention}\n<:Space:1182833159579115530><:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Space:1182833159579115530><:Shello_Right:1164269631062691880> **Price:** {price} {currency}\n<:Space:1182833159579115530><:Shello_Right:1164269631062691880> **Product:** {product}")
+        info_embed.set_footer(text=f"Order ID: {order_id}")
+
+        await ctx.send(embed=embed) 
+        await ctx.channel.send(embed=info_embed)
+        await designer_channel.send(embed=info_embed)
         try:
-            order_id = f"{random.randint(1000, 9999)}"
-            currency = await Base_Guild.fetch_guild_currency(guild=ctx.guild.id)
-            await Base_Guild.store_active_design(order_id=order_id, guild=ctx.guild.id, channel=ctx.channel.id, customer=customer.id, price=price, designer=ctx.author.id, product=product)
-
-            embed = discord.Embed(title="Design Started", description=f"Greetings {customer.mention}! The designer {ctx.author.mention} has started your **{product}**, you will receive updates on your products within this channel and your DM's.", color=discord.Color.light_embed())
-            embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
-            embed.set_footer(text="Shello Systems")
-
-            info_embed = discord.Embed(color=discord.Color.dark_embed(), title="New Design", description=f"<:Shello_Right:1164269631062691880> **Designer:** {ctx.author.mention}\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Price:** {price} {currency}\n<:Shello_Right:1164269631062691880> **Product:** {product}")
-            info_embed.set_footer(text=f"Order ID: {order_id}")
-
-            await ctx.send(embed=embed) 
-            await ctx.channel.send(embed=info_embed)
-            await designer_channel.send(embed=info_embed)
-            try:
-                await customer.send(embed=info_embed, content=f"<:Approved:1163094275572121661> **{customer.display_name},** your design has now been started!")
+            await customer.send(embed=info_embed, content=f"<:Approved:1163094275572121661> **{customer.display_name},** your design has now been started!")
                 
-            except Exception as e:
-                return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** I was unable to DM the customer")
-        except Exception as e:
-            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** I was unable to send the messages. Please try again.")
+        except discord.Forbidden:
+            return await ctx.send(f"{denied_emoji} **{ctx.author.name},** I was unable to DM the customer")
         
-    @design.command(name=f"contribute", description=f"Give the customer an update on an active order")
+    @design.command(name=f"manage", description=f"Give the customer an update on an active order")
+    @commands.guild_only()
     async def contribute(self, ctx: commands.Context, order_id: int):
         if ctx.interaction:
             await ctx.interaction.response.defer()
@@ -271,7 +304,7 @@ class DesignCog(commands.Cog):
         existing_record = await Base_Guild.fetch_design_config(guild_id)
 
         if not existing_record:
-            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you need to set up the design module. ")
+            return await ctx.send(f"{denied_emoji} **{ctx.author.name},** you need to set up the design module. ")
 
         designer_log_channel_id = existing_record.get("designer_log_channel_id")
         designer_role_id = existing_record.get("designer_role_id")
@@ -280,33 +313,34 @@ class DesignCog(commands.Cog):
         designer_role = ctx.guild.get_role(designer_role_id)
 
         if designer_log_channel_id is None or designer_role_id is None or  staff_Role_id is None:
-            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** The design module is not properly set up.")
+            return await ctx.send(f"{denied_emoji} **{ctx.author.name},** The design module is not properly set up.")
         
 
         if staff_role not in ctx.author.roles and designer_role not in ctx.author.roles:
-            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** You can't use this.")
+            return await ctx.send(f"{denied_emoji} **{ctx.author.name},** You can't use this.")
         
         active_design = await Base_Guild.fetch_active_design(order_id=order_id)
 
         if not active_design:
-            return await ctx.send(f"<:shell_denied:1160456828451295232> **{ctx.author.name},** there is no active order for this ID.")
+            return await ctx.send(f"{denied_emoji} **{ctx.author.name},** there is no active order for this ID.")
         designer = ctx.guild.get_member(active_design["designer_id"])
         customer = ctx.guild.get_member(active_design["customer_id"])
         price = active_design["price"]
         product = active_design["product"]
         currency = await Base_Guild.fetch_guild_currency(guild=ctx.guild.id)
         
-        info_embed = discord.Embed(color=discord.Color.dark_embed(), title="Design Contribution", description=f"<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Price:** {price} {currency}\n<:Shello_Right:1164269631062691880> **Product:** {product}")
+        info_embed = discord.Embed(color=discord.Color.dark_embed(), title="Order Contribution", description=f"<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Price:** {price} {currency}\n<:Shello_Right:1164269631062691880> **Product:** {product}")
         view = discord.ui.View()
         view.add_item(DesignContributionOptions(order_id=order_id, author=ctx.author))
         await ctx.send(embed=info_embed, view=view)
 
-    @design.command(name=f"find", description=f"Find a specific design")
+    @design.command(name=f"find", description=f"Find a specific order")
+    @commands.guild_only()
     async def finddesign(self, ctx: commands.Context, order_id: int):
         message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** please wait while your request is processed.")
         order = await Base_Guild.fetch_design(order_id=order_id)        
         if not order:
-            return await message.edit(content=f"<:shell_denied:1160456828451295232> **{ctx.author.name},** there is no order for this ID.")
+            return await message.edit(content=f"{denied_emoji} **{ctx.author.name},** there is no order for this ID.")
         designer = ctx.guild.get_member(order["designer_id"])
         customer = ctx.guild.get_member(order["customer_id"])
         price = order["price"]

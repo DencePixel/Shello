@@ -16,6 +16,9 @@ class ErrorCog(commands.Cog):
         if isinstance(error, commands.CommandNotFound):
             return
         
+        if isinstance(error, commands.NotOwner):
+            return
+        
         
         error_id = random.randint(1, 99999999999)
         embed = discord.Embed(
@@ -39,7 +42,12 @@ class ErrorCog(commands.Cog):
     async def error(self, interaction: discord.Interaction, error):
         if isinstance(error, commands.CommandNotFound):
             return
-        error_id = random.randint(1, 1000)
+        
+        if isinstance(error, commands.NotOwner):
+            return
+        
+        
+        error_id = random.randint(1, 99999999999)
         embed = discord.Embed(
             title=f"Oops!",
             description=f"Looks like an error has occurred. The developers have been notified, and they will fix me shortly!\n",
@@ -62,9 +70,12 @@ class ErrorCog(commands.Cog):
     async def cerror(self, ctx: commands.Context, error):
         if isinstance(error, commands.CommandNotFound):
             return
-            
-            
-        error_id = random.randint(1, 1000)
+        
+        if isinstance(error, commands.NotOwner):
+            return
+        
+        
+        error_id = random.randint(1, 99999999999)
         embed = discord.Embed(
             title=f"Oops!",
             description=f"Looks like an error has occurred.",

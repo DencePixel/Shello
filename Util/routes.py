@@ -9,7 +9,7 @@ class Routes(commands.Cog):
         self.bot = bot
 
         if not hasattr(self.bot, "ipc") or getattr(self.bot, "ipc") == None:
-            self.bot.ipc = ipc.Server(self.bot, host="0.0.0.0", secret_key="SuperSecretKey", standard_port=5000, multicast_port=5001)
+            self.bot.ipc = ipc.Server(self.bot, host="0.0.0.0", secret_key="SuperSecretKey", standard_port=8765, multicast_port=20000)
 
     async def cog_load(self) -> None:
         await self.bot.ipc.start()
@@ -76,6 +76,12 @@ class Routes(commands.Cog):
                 admin = True
 
         return json.dumps({"admin": admin})
+    
+@Server.route()
+async def latency(self, data: ClientPayload):
+    latency = round(self.bot.latency * 1000)
+    return {"latency": latency}
+    
 
 
 

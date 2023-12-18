@@ -11,13 +11,11 @@ from Util.Yaml import Load_yaml
 load_dotenv()
 
 class StaffJoinedButton(discord.ui.Button):
-    def __init__(self, staff_member):
-        self.staff_member = staff_member
+    def __init__(self):
         super().__init__(style=discord.ButtonStyle.gray, label="Shello Staff", custom_id=f"persistent_view:staff_joined", emoji=f"<:shello:1179901706952257706>")
 
     async def callback(self, interaction: discord.Interaction):
         embed = discord.Embed(color=discord.Color.light_embed(),title=f"Staff Member", description=f"This user is a member of the Shello staff team. They may be joining to investigate an issue or participate in your community, we are humans that enjoy communities aswell.")
-        embed.set_author(icon_url=self.staff_member.display_avatar.url, name=self.staff_member.display_name)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 class Join(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -41,6 +39,8 @@ class Join(commands.Cog):
     
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        if os.getenv("ENVIORMENT").lower() != "production":
+            return
             
         guild_id = member.guild.id
         
@@ -99,6 +99,11 @@ class Join(commands.Cog):
         welcome_message = await replace_variable_welcome(welcome_message, replacements)
         welcome_channel = member.guild.get_channel(welcome_channel_id)
         if welcome_channel:
+            if member.guild.id == 1160173970675486760:
+                if view is None:
+                    view = discord.ui.View()
+                item = discord.ui.Button(style=discord.ButtonStyle.gray, label="Dashboard", url="https://discord.com/channels/1160173970675486760/1160174316026077254") 
+                view.add_item(item)
             await welcome_channel.send(content=welcome_message, view=view)
             role_id = config.get("join_role")
             if role_id:

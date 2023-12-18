@@ -1,3 +1,5 @@
 approved_emoji = "<:Approved:1163094275572121661>"
 denied_emoji = "<:Denied:1163095002969276456>"
 alert_emoji = "<:Alert:1163094295314706552>"
+space_emoji = "<:Space:1182833159579115530>"
+right_Emoji = "<:Shello_Right:1164269631062691880>"

@@ -31,9 +31,16 @@ class SHELLO(commands.AutoShardedBot):
         else:
             prefix = ">"
         intents = discord.Intents.default()
-        intents.members = True
-        intents.message_content = False
-        intents.presences = False
+        if code.lower() == "production":
+            intents.members = True
+            intents.message_content = False
+            intents.presences = False
+            logging.info("Enabled Intents for Production")
+        else:
+            intents.members = True
+            intents.message_content = True
+            intents.presences = True
+            logging.info("Enabled Intents for Development")
         super().__init__(
             command_prefix=commands.when_mentioned_or(prefix),
             intents=intents,
@@ -145,13 +152,30 @@ async def run_function(token):
     client = SHELLO()
 
     @client.event
-    async def on_command(ctx):
+    async def on_message(ctx):
         if ctx.author.bot:
             return
 
-    @client.command()
-    async def prefix(self, ctx, new_prefix: str):
-        pass
+        trigger = ctx.content.lower()
+
+        cluster = pymongo.MongoClient(Load_yaml()["mongodb"]["uri"])
+        db = cluster[Load_yaml()["collections"]["autoresponder"]["database"]]
+        autoresponder_config = db[Load_yaml()["collections"]["autoresponder"]["collection"]]
+
+
+
+        autoresponder = autoresponder_config.find_one(
+            {"guild_id": ctx.guild.id})
+        
+        
+
+        if autoresponder:
+            response = autoresponder.get("responses", {})
+            for name, response in response.items():
+                if name == trigger:
+                    return await ctx.channel.send(response)
+        else:
+            await client.process_commands(ctx)
 
     await client.setup_hook()
 

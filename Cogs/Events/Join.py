@@ -51,7 +51,7 @@ class Join(commands.Cog):
             if role:
                 if role in guild_member.roles:
                     view = discord.ui.View()
-                    view.add_item(StaffJoinedButton(staff_member=guild_member))
+                    view.add_item(StaffJoinedButton())
                     
                 else:
                     view = None

@@ -10,6 +10,7 @@ from Cogs.Commands.Config.Modules.suggestion import SuggestionChannel
 from Cogs.Commands.Config.Modules.customization import CustomizationModuleView
 from Cogs.Commands.Config.Modules.alerts import AlertsModuleSelection
 from Cogs.Commands.Config.Modules.leaves import LeavesModuleSelection
+from Cogs.Commands.Config.Modules.response import AutoresponderActionSelect
 
 class ModuleSelection(discord.ui.Select):
     def __init__(self, message, ctx):
@@ -24,7 +25,8 @@ class ModuleSelection(discord.ui.Select):
             discord.SelectOption(label=f"Suggestions", description=f"Configure the suggestions module.", value=f"Suggestions", emoji=f"<:suggestion:1181708198521090189>"),
             discord.SelectOption(label=f"Customization", description=f"Configure the customization module.", value=f"Customization", emoji=f"<:customization:1181651424627662868>"),
             discord.SelectOption(label=f"Alerts", description=f"Configure the alerts module.", emoji=f"<:Alert:1163094295314706552>", value=f"Alerts"),
-            discord.SelectOption(label=f"Leaves", description=f"Configure the LOA module.", emoji=f"<:leaves:1184437355424251934>", value=f"leaves")
+            discord.SelectOption(label=f"Leaves", description=f"Configure the LOA module.", emoji=f"<:leaves:1184437355424251934>", value=f"leaves"),
+            discord.SelectOption(label=f"Autoresponder", description=f"Configure the autoresponder module.", emoji=f"<:responder:1187072737559183370>", value=f"response")
             ]
         super().__init__(placeholder="Select an option",max_values=1,min_values=1,options=options)
     async def callback(self, interaction: discord.Interaction):
@@ -93,6 +95,14 @@ class ModuleSelection(discord.ui.Select):
                 return
             
             await self.message.edit(view=LeavesModuleSelection(timeout=None, ctx=self.ctx, message=self.message), content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the LOA module.")
+        
+        if self.values[0] == "response":
+            if interaction.user.id != self.ctx.author.id:
+                return
+            
+            
+            view = AutoresponderActionSelect(message=self.message, user=self.ctx)
+            await self.message.edit(embed=None, view=view, content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the autoresponder module.")
             
             
 

@@ -156,10 +156,18 @@ class LeaveRequestButtons(discord.ui.View):
         if not loa_info:
             return await interaction.followup.send(content=f"{denied_emoji} **{interaction.user.display_name},** I can't find that LOA.")
         message_id = loa_info.get("message_id")
+        requester_id = loa_info.get("author_id")
         existing_record = self.leaves_config.find_one({"guild_id": interaction.guild.id})
         if not existing_record:
             return await interaction.followup.send(content=f"{denied_emoji} **{interaction.user.display_name},** you need to setup the LOA module.", ephemeral=True)
         channel_id = existing_record.get("loa_channel")
+        role_id = existing_record.get("leave_role")
+        if role_id:
+            role = interaction.guild.get_role(role_id)
+            if role:
+                author = interaction.guild.get_member(requester_id)
+                if role not in author.roles:
+                    author.add_roles(role)
         channel = interaction.guild.get_channel(channel_id)
         message = await channel.fetch_message(message_id)
         if not message:
@@ -276,11 +284,12 @@ class LoaCog(commands.Cog):
             config = self.leaves_config.find_one({"guild_id": guild_id})
             if not config:
                 return
+            main_guild = self.client.get_guild(guild_id)
             role_id = config["leave_role"]
             if role_id:
-                role = guild.get_role(role_id)
+                role = main_guild.get_role()
                 if role:
-                    user = guild.get_member(author_id)
+                    user = main_guild.get_member(author_id)
                     if role in user.roles:
                         user.remove_roles(role)
                         
@@ -297,7 +306,6 @@ class LoaCog(commands.Cog):
                     return
                 channel = guild.get_channel(channel_id)
                 message = await channel.fetch_message(message_id)
-                role = guild.get_role()
 
                 if message:
                     embed = discord.Embed(title=f"Expired Loa", description=f"{member.mention}'s LOA has expired.")
@@ -306,6 +314,7 @@ class LoaCog(commands.Cog):
                     try:
                         embed = discord.Embed(title="Expired LOA", description=f"Your LOA at **{guild.name}** has expired.", color=discord.Color.red())
                         await member.send(embed=embed)
+                        
                     except Exception as e:
                         print(f"Error occurred when DMing the requester: {e}")
 

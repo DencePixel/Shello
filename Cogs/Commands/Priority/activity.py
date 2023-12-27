@@ -4,6 +4,7 @@ from pymongo import MongoClient
 from DataModels.guild import BaseGuild
 from DataModels.user import BaseUser
 from Util.Yaml import Load_yaml
+from Util.paginator import Simple
 import asyncio
 import calendar
 from datetime import datetime, timedelta, date
@@ -25,7 +26,6 @@ class QuotaCog(commands.Cog):
         self.activity_channel_id = None
         self.load_config()
         self.send_weekly_leaderboard.start()
-        
 
     def load_config(self):
         self.config = Load_yaml()
@@ -38,11 +38,10 @@ class QuotaCog(commands.Cog):
         self.design_records = self.design_Db[self.config["collections"]["design"]["log_collection"]]
         self.leaves_db = self.cluster[self.config["collections"]["Leaves"]["database"]]
 
-
     @tasks.loop(minutes=1)
     async def send_weekly_leaderboard(self):
         now = datetime.utcnow() + timedelta(hours=0)
-        
+
         if now.weekday() == 4 and now.hour == 16 and now.minute == 30:
             try:
                 await self.send_leaderboard()
@@ -51,7 +50,7 @@ class QuotaCog(commands.Cog):
 
             channel = self.client.get_channel(1165730359888052304)
             await channel.send(content="Sent weekly activity report")
-        
+
     async def send_leaderboard(self):
         for guild in self.client.guilds:
             try:
@@ -81,34 +80,39 @@ class QuotaCog(commands.Cog):
         guild_design_records = list(guild_design_records_cursor)
         designers = [member for member in guild.members if designer_role in member.roles]
 
-
-
-        leaderboard_embed = discord.Embed(
-            title=f"{guild.name} Weekly Leaderboard", color=discord.Color.light_embed(), description=f"**Quota Information for {guild.name}**"
-        )
-        leaderboard_embed.set_footer(text=f"Activity Module")
-
-
+        leaderboard_pages = []
         update_operations = []
         for designer in designers:
             user_quota = sum(1 for record in guild_design_records if record["designer_id"] == designer.id)
-            designs_to_mark = [record["order_id"] for record in guild_design_records if record["designer_id"] == designer.id]
-            active_leaves = self.leaves_db(self.config["collections"]["Leaves"]["active"])
-            overall_leaves = self.leaves_db(self.config["collections"]["Leaves"]["overall"])
-            loa_status = active_leaves.find_one({"guild_id": guild.id,"author_id": designer.id, "status": "active"})
+            designs_to_mark = [record["order_id"] for record in guild_design_records if
+                               record["designer_id"] == designer.id]
+            active_leaves = self.leaves_db[self.config["collections"]["Leaves"]["active"]]
+            overall_leaves = self.leaves_db[self.config["collections"]["Leaves"]["overall"]]
+            loa_status = active_leaves.find_one(
+                {"guild_id": guild.id, "author_id": designer.id, "status": "active"})
             if loa_status:
                 loa_overall_status = "True"
             else:
                 loa_overall_status = "False"
 
+            if len(leaderboard_pages) == 0 or len(leaderboard_pages[-1].description) >= 2048:
+                leaderboard_pages.append(discord.Embed(
+                    title=f"{guild.name} Weekly Leaderboard",
+                    color=discord.Color.light_embed(),
+                    description=f"**Quota Information for {guild.name}**"
+                ))
+
             if user_quota >= weekly_quota:
-                leaderboard_embed.description += f"\n\n**User:** {designer.mention}\n**Passed:** ``True``\n**On LOA:** ``{loa_overall_status}``"
+                leaderboard_pages[-1].description += f"\n\n**User:** {designer.mention}\n**Passed:** ``True``\n" \
+                                                    f"**On LOA:** ``{loa_overall_status}``"
                 update_operations.extend([
-                    self.design_records.update_one({"order_id": design_id, "accounted_for": {"$ne": True}}, {"$set": {"accounted_for": True}}) for design_id in designs_to_mark
+                    self.design_records.update_one({"order_id": design_id, "accounted_for": {"$ne": True}},
+                                                  {"$set": {"accounted_for": True}}) for design_id in designs_to_mark
                 ])
             else:
                 designs_needed = weekly_quota - user_quota
-                leaderboard_embed.description += f"\n\n**User:** {designer.mention}\n**Passed:** ``False``\n**Designs Left:** ``{designs_needed}``\n**On LOA:** ``{loa_overall_status}``"
+                leaderboard_pages[-1].description += f"\n\n**User:** {designer.mention}\n**Passed:** ``False``\n" \
+                                                    f"**Designs Left:** ``{designs_needed}``\n**On LOA:** ``{loa_overall_status}``"
 
         if update_operations:
             try:
@@ -116,20 +120,14 @@ class QuotaCog(commands.Cog):
             except Exception as bulk_write_error:
                 print(f"Error during bulk write: {bulk_write_error}")
 
-        activity_channel_id = existing_record.get("activity_channel")
-        activity_channel = self.client.get_channel(activity_channel_id)
-        
-        if activity_channel:
-            await activity_channel.send(embed=leaderboard_embed)
-
-
+        paginator = Simple(channel=guild.get_channel(existing_record.get("activity_channel")))
+        await paginator.start(guild, leaderboard_pages)
     @commands.hybrid_group(name="activity", description=f"Activity based commands")
     async def quota(self, ctx):
         pass
-    
+
     @quota.command(name="leaderboard", description="See who has and who hasn't passed their quota")
     async def leaderboard(self, ctx: commands.Context):
-
         guild = ctx.guild
         existing_record = await Base_Guild.fetch_design_config(guild.id)
         if not existing_record:
@@ -152,30 +150,41 @@ class QuotaCog(commands.Cog):
         guild_design_records = list(guild_design_records_cursor)
         designers = [member for member in guild.members if designer_role in member.roles]
 
-
-
-        leaderboard_embed = discord.Embed(
-            title=f"{guild.name} Leaderboard", color=discord.Color.light_embed(), description=f"**Quota Information for {guild.name}**"
-        )
-        leaderboard_embed.set_footer(text=f"Activity Module")
+        leaderboard_pages = []
 
         for designer in designers:
-            active_leaves = self.leaves_db(self.config["collections"]["Leaves"]["active"])
-            overall_leaves = self.leaves_db(self.config["collections"]["Leaves"]["overall"])
-            loa_status = active_leaves.find_one({"guild_id": guild.id,"author_id": designer.id, "status": "active"})
+            active_leaves = self.leaves_db[self.config["collections"]["Leaves"]["active"]]
+            overall_leaves = self.leaves_db[self.config["collections"]["Leaves"]["overall"]]
+            loa_status = active_leaves.find_one(
+                {"guild_id": guild.id, "author_id": designer.id, "status": "active"})
             if loa_status:
                 loa_overall_status = "True"
             else:
                 loa_overall_status = "False"
             user_quota = sum(1 for record in guild_design_records if record["designer_id"] == designer.id)
+            designs_to_mark = [record["order_id"] for record in guild_design_records if
+                               record["designer_id"] == designer.id]
 
             if user_quota >= weekly_quota:
-                leaderboard_embed.description += f"\n\n**User:** {designer.mention}\n**Passed:** ``True``\n**On LOA:** {loa_overall_status}"
+                leaderboard_text = f"\n\n**User:** {designer.mention}\n**Passed:** ``True``\n**On LOA:** ``{loa_overall_status}``"
             else:
                 designs_needed = weekly_quota - user_quota
-                leaderboard_embed.description += f"\n\n**User:** {designer.mention}\n**Passed:** ``False``\n**Designs Left:** ``{designs_needed}``\n**On LOA:** {loa_overall_status}"
+                leaderboard_text = f"\n\n**User:** {designer.mention}\n**Passed:** ``False``\n" \
+                                   f"**Designs Left:** ``{designs_needed}``\n**On LOA:** ``{loa_overall_status}``"
 
-        await ctx.send(embed=leaderboard_embed)
+            if len(leaderboard_text) + len(leaderboard_pages[-1].description) >= 2048:
+                leaderboard_pages.append(discord.Embed(
+                    title=f"{guild.name} Weekly Leaderboard",
+                    color=discord.Color.light_embed(),
+                    description=f"**Quota Information for {guild.name}**"
+                ))
+
+            leaderboard_pages[-1].description += leaderboard_text
+
+        for page in leaderboard_pages:
+            paginator = Simple(channel=ctx.channel, timeout=120)
+            await paginator.start(ctx, [page])
+
         
     @quota.command(name=f"user", description=f"See if you have passed the quota")
     async def user(self, ctx: commands.Context, user: discord.Member=None):
@@ -206,8 +215,8 @@ class QuotaCog(commands.Cog):
         )
         quota_embed.set_footer(text=f"Activity Module")
         quota_embed.set_author(icon_url=user.display_avatar.url, name=user.display_name)
-        active_leaves = self.leaves_db(self.config["collections"]["Leaves"]["active"])
-        overall_leaves = self.leaves_db(self.config["collections"]["Leaves"]["overall"])
+        active_leaves = self.leaves_db[self.config["collections"]["Leaves"]["active"]]
+        overall_leaves = self.leaves_db[self.config["collections"]["Leaves"]["overall"]]
         loa_status = active_leaves.find_one({"guild_id": ctx.guild.id,"author_id": user.id, "status": "active"})
         if loa_status:
             loa_overall_status = "True"

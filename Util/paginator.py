@@ -5,33 +5,8 @@ import asyncio
 from discord.ext import commands
 
 
-
 class Simple(discord.ui.View):
-    """
-    Button Paginator.
-
-    Parameters:
-    ----------
-    timeout: int
-        How long the Paginator should timeout in, after the last interaction. (In seconds) (Overrides default of 60)
-    PreviousButton: discord.ui.Button
-        Overrides default previous button.
-    NextButton: discord.ui.Button
-        Overrides default next button.
-    FirstEmbedButton: discord.ui.Button  # Corrected the class name here
-        Overrides default first page button.
-    LastEmbedButton: discord.ui.Button  # Corrected the class name here
-        Overrides default last page button.
-    PageCounterStyle: discord.ButtonStyle
-        Overrides default page counter style.
-    InitialPage: int
-        Page to start the pagination on.
-    ephemeral: bool
-        Whether to send messages with this view as ephemeral (only visible to the original author).
-    """
-
-    def __init__(self, *,
-                 timeout: int = 60,
+    def __init__(self, channel: discord.TextChannel, *, timeout: int = None, 
                  PreviousButton: discord.ui.Button = discord.ui.Button(emoji="<:Shello_Left:1164269633008844961>", style=discord.ButtonStyle.grey),
                  NextButton: discord.ui.Button = discord.ui.Button(emoji="<:Shello_Right:1164269631062691880>", style=discord.ButtonStyle.grey),
                  FirstEmbedButton: discord.ui.Button = discord.ui.Button(emoji="<:Shello_FarLeft:1164269634132906024>", style=discord.ButtonStyle.grey),
@@ -39,6 +14,7 @@ class Simple(discord.ui.View):
                  PageCounterStyle: discord.ButtonStyle = discord.ButtonStyle.grey,
                  InitialPage: int = 0,
                  ephemeral: bool = False) -> None:
+        self.channel = channel
         self.PreviousButton = PreviousButton
         self.FirstEmbedButton = FirstEmbedButton
         self.LastEmbedButton = LastEmbedButton
@@ -60,7 +36,6 @@ class Simple(discord.ui.View):
         embed = discord.Embed(title=f"Timed out!", description=f"I have timed out!", color=discord.Color.dark_embed())
         embed.set_author(icon_url=self.ctx.author.display_avatar.url, name=self.ctx.author.display_name)
         await self.message.edit(view=None, content=None, embed=embed)
-    
 
     async def start(self, ctx: discord.Interaction|commands.Context, pages: list[discord.Embed]):
         if isinstance(ctx, discord.Interaction):
@@ -85,7 +60,7 @@ class Simple(discord.ui.View):
         self.add_item(self.NextButton)
         self.add_item(self.LastEmbedButton)
 
-        self.message = await ctx.send(embed=self.pages[self.InitialPage], view=self, ephemeral=self.ephemeral)
+        self.message = await self.channel.send(embed=self.pages[self.InitialPage], view=self)
 
     async def previous(self):
         if self.current_page == 0:
@@ -101,8 +76,6 @@ class Simple(discord.ui.View):
             self.current_page = 0
         else:
             self.current_page += 1
-        
-            
 
         self.page_counter.label = f"{self.current_page + 1}/{self.total_page_count}"
         await self.message.edit(embed=self.pages[self.current_page], view=self)
@@ -146,8 +119,6 @@ class Simple(discord.ui.View):
         self.page_counter.label = f"{self.current_page + 1}/{self.total_page_count}"
         await self.message.edit(embed=self.pages[self.current_page], view=self)
         await interaction.response.defer()
-
-
 
 
 class SimplePaginatorPageCounter(discord.ui.Button):

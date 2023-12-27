@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from importlib import reload, import_module
 from Cogs.Events.Join import StaffJoinedButton
 from Cogs.Commands.Priority.leaves import LeaveRequestButtons
+from Util.paginator import Simple
 
 load_dotenv()
 
@@ -64,7 +65,9 @@ class SHELLO(commands.AutoShardedBot):
             "Cogs.Commands.Priority.staff",
             "Cogs.Commands.Priority.suggest",
             "Cogs.Commands.Priority.alerts",
-            "Cogs.Commands.Priority.leaves"
+            "Cogs.Commands.Priority.leaves",
+            "Cogs.Commands.Priority.giveaways",
+            "Cogs.Events.message"
             ]
 
         self.cogs_last_modified = {cog: self.get_last_modified(cog) for cog in self.cogslist}

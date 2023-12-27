@@ -225,7 +225,7 @@ class QuotaCog(commands.Cog):
             loa_overall_status = "False"
 
         user_quota = sum(1 for record in guild_design_records if record["designer_id"] == user.id)
-
+        quota_embed.description = ""
         if user_quota >= weekly_quota:
             quota_embed.description += f"\n\n**User:** {user.mention}\n**Passed:** ``True``\n**On LOA:** {loa_overall_status}"
         else:

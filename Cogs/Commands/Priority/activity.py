@@ -171,8 +171,9 @@ class QuotaCog(commands.Cog):
                 designs_needed = weekly_quota - user_quota
                 leaderboard_text = f"\n\n**User:** {designer.mention}\n**Passed:** ``False``\n" \
                                    f"**Designs Left:** ``{designs_needed}``\n**On LOA:** ``{loa_overall_status}``"
-
-            if len(leaderboard_text) + len(leaderboard_pages[-1].description) >= 2048:
+            
+            #
+            if len(leaderboard_pages) == 0 or len(leaderboard_text) + len(leaderboard_pages[-1].description) >= 2048:
                 leaderboard_pages.append(discord.Embed(
                     title=f"{guild.name} Weekly Leaderboard",
                     color=discord.Color.light_embed(),
@@ -221,7 +222,7 @@ class QuotaCog(commands.Cog):
         if loa_status:
             loa_overall_status = "True"
         else:
-            oa_overall_status = "False"
+            loa_overall_status = "False"
 
         user_quota = sum(1 for record in guild_design_records if record["designer_id"] == user.id)
 

@@ -50,7 +50,7 @@ def convert_duration(duration_str):
         raise ValueError("Invalid duration unit. Please use one of D, W, M, H, S, or MI.")
     
     
-async def interaction_check_failure(responder: InteractionResponse | Webhook | typing.Callable):
+async def interaction_check_failure(responder: typing.Union[InteractionResponse, Webhook, typing.Callable]):
     if isinstance(responder, typing.Callable):
         responder = responder()
 

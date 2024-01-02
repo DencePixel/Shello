@@ -1,9 +1,7 @@
 
 import discord
-
 from discord import Embed, InteractionResponse, Webhook
 from discord.ext import commands
-import re
 from Util.helpers import interaction_check_failure
 
 

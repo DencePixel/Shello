@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 import aiohttp
-import pymongo
-from Util.functions import replace_variable_welcome
+import motor.motor_asyncio
+from Util.helpers import replace_variable_welcome
 
 from Util.Yaml import Load_yaml
 load_dotenv()
@@ -29,11 +29,11 @@ class AutoResponder(commands.Cog):
 
         guild_id = str(message.guild.id)
 
-        cluster = pymongo.MongoClient(self.mongo_uri)
+        cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
         db = cluster[self.config["collections"]["autoresponder"]["database"]]
         autoresponder_config = db[self.config["collections"]["autoresponder"]["collection"]]
 
-        existing_record = autoresponder_config.find_one({"guild_id": guild_id})
+        existing_record = await autoresponder_config.find_one({"guild_id": guild_id})
         if existing_record:
             responses = existing_record.get("responses", [])
 

@@ -5,7 +5,7 @@ from discord import app_commands
 from discord import Color
 import discord
 from discord.interactions import Interaction
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 from DataModels.guild import BaseGuild
 import os
 
@@ -72,7 +72,7 @@ class ContributeModal(discord.ui.Modal):
     def __init__(self, question_name, title, question_placeholder,status, order_id):
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.status = status
         self.order_id = order_id
         super().__init__(title=title)
@@ -141,28 +141,28 @@ class ContributeModal(discord.ui.Modal):
             await designer_channel.send(embed=info_embed, content=f"<:Approved:1163094275572121661> cancelled by **{interaction.user.mention}**")
 
 class DesignFinishedOptions(discord.ui.Select):
-    def __init__(self, author, order_id, guild_id, **kwargs):
+    async def __init__(self, author, order_id, guild_id, **kwargs):
         self.author = author
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.order_id = order_id
         self.guild_id = guild_id
         super().__init__(placeholder='Please select a payment link.', min_values=1, max_values=1, **kwargs)
 
-        self.fetch_payment_links()
+        await self.fetch_payment_links()
 
-    def fetch_payment_links(self):
+    async def fetch_payment_links(self):
         payment_db = self.cluster[self.config["collections"]["payment"]["database"]]
         payment_config = payment_db[self.config["collections"]["payment"]["collection"]]
-        existing_record = payment_config.find_one({"guild_id": self.guild_id})
+        existing_record = await payment_config.find_one({"guild_id": self.guild_id})
 
         if existing_record:
             links = existing_record.get("links", {})
             for name, link in links.items():
                 self.add_option(label=name, value=link)
         else:
-            self.add_option(label="No payment links available", value="no_links")
+            self.add_option(label="No payment links available", value="https://shellobot.xyz")
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
@@ -235,7 +235,7 @@ class DesignCog(commands.Cog):
         self.client = client
         self.mongo_uri = None
         self.config = None  
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
@@ -282,7 +282,7 @@ class DesignCog(commands.Cog):
 
         embed = discord.Embed(title="Order Started", description=f"Greetings {customer.mention}! The designer {ctx.author.mention} has started your **{product}**, you will receive updates on your products within this channel and your DM's.", color=discord.Color.light_embed())
         embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
-        embed.set_footer(text="Shello Systems")
+        embed.set_footer(text=os.getenv("SERVER_NAME"))
 
         info_embed = discord.Embed(color=discord.Color.dark_embed(), title="New Design", description=f"**Order {order_id}**\n<:Space:1182833159579115530><:Shello_Right:1164269631062691880> **Designer:** {ctx.author.mention}\n<:Space:1182833159579115530><:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Space:1182833159579115530><:Shello_Right:1164269631062691880> **Price:** {price} {currency}\n<:Space:1182833159579115530><:Shello_Right:1164269631062691880> **Product:** {product}")
         info_embed.set_footer(text=f"Order ID: {order_id}")
@@ -365,13 +365,12 @@ class DesignCog(commands.Cog):
         
     @design.command(name=f"log", description=f"Log a design without having to start the design")
     async def logdesign(self, ctx: commands.Context, customer: discord.Member, price: int, *, product: str):
-        if ctx.interaction:
-            await ctx.interaction.response.defer()
+        message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** please wait while your request is processed.")
         guild_id = ctx.guild.id
         existing_record = await Base_Guild.fetch_design_config(guild_id)
 
         if not existing_record:
-            return await ctx.send(f"{denied_emoji} **{ctx.author.name},** you need to set up the design module. ")
+            return await message.edit(content=f"{denied_emoji} **{ctx.author.name},** you need to set up the design module. ")
         designer_log_channel_id = existing_record.get("designer_log_channel_id")
         designer_role_id = existing_record.get("designer_role_id")
         staff_Role_id = existing_record.get("staff_role_id")
@@ -379,11 +378,11 @@ class DesignCog(commands.Cog):
         designer_role = self.client.get_guild(ctx.guild.id).get_role(designer_role_id)
 
         if designer_channel is None or designer_role is None or designer_role not in ctx.author.roles:
-            return await ctx.send(f"{denied_emoji} **{ctx.author.name},** you can't use this command.")
+            return await message.edit(content=f"{denied_emoji} **{ctx.author.name},** you can't use this command.")
 
         order_id = f"{random.randint(1000, 9999)}"
         currency = await Base_Guild.fetch_guild_currency(guild=ctx.guild.id)
-        await Base_Guild.update_design_logs(order_id=order_id, guild=ctx.guild.id, channel=ctx.channel.id, customer=customer.id, price=price, designer=ctx.author.id, product=product)
+        await Base_Guild.update_design_logs(order_id=order_id, guild=ctx.guild.id, customer_id=customer.id, price=price, designer_id=ctx.author.id, product=product)
 
         info_embed = discord.Embed(color=discord.Color.dark_embed(), title="Logged Design", description=f"**Order {order_id}**\n<:Space:1182833159579115530><:Shello_Right:1164269631062691880> **Designer:** {ctx.author.mention}\n<:Space:1182833159579115530><:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Space:1182833159579115530><:Shello_Right:1164269631062691880> **Price:** {price} {currency}\n<:Space:1182833159579115530><:Shello_Right:1164269631062691880> **Product:** {product}")
         info_embed.set_footer(text=f"Order ID: {order_id}")

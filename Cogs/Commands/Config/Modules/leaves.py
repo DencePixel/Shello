@@ -1,6 +1,5 @@
 import discord
-import pymongo
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 from Util.Yaml import Load_yaml
 
 
@@ -12,7 +11,7 @@ class LeavesChannel(discord.ui.ChannelSelect):
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
         
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.leaves_db = self.cluster[self.config["collections"]["Leaves"]["database"]]
         self.leaves_config = self.leaves_db[self.config["collections"]["Leaves"]["config"]]
 
@@ -29,14 +28,14 @@ class LeavesChannel(discord.ui.ChannelSelect):
         
         guild_id = interaction.guild.id
         
-        existing_record = self.leaves_config.find_one({"guild_id": guild_id})
+        existing_record = await self.leaves_config.find_one({"guild_id": guild_id})
         
         leave_channel = int(self.values[0].id)
 
 
         if existing_record:
             
-            self.leaves_config.update_one(
+            await self.leaves_config.update_one(
                 {"guild_id": guild_id},
                 {"$set": {"loa_channel": leave_channel}}
             )
@@ -45,7 +44,7 @@ class LeavesChannel(discord.ui.ChannelSelect):
                 "guild_id": guild_id,
                 "loa_channel": leave_channel
             }
-            self.leaves_config.insert_one(new_record)        
+            await self.leaves_config.insert_one(new_record)        
   
 
 class LeavesRole(discord.ui.RoleSelect):
@@ -54,7 +53,7 @@ class LeavesRole(discord.ui.RoleSelect):
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
         
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.leaves_db = self.cluster[self.config["collections"]["Leaves"]["database"]]
         self.leaves_config = self.leaves_db[self.config["collections"]["Leaves"]["config"]]
 
@@ -71,13 +70,13 @@ class LeavesRole(discord.ui.RoleSelect):
         
         guild_id = interaction.guild.id
         
-        existing_record = self.leaves_config.find_one({"guild_id": guild_id})
+        existing_record = await self.leaves_config.find_one({"guild_id": guild_id})
         
         leaves_role = int(self.values[0].id)
 
         if existing_record:
             
-            self.leaves_config.update_one(
+            await self.leaves_config.update_one(
                 {"guild_id": guild_id},
                 {"$set": {"leave_role": leaves_role}}
             )
@@ -86,7 +85,7 @@ class LeavesRole(discord.ui.RoleSelect):
                 "guild_id": guild_id,
                 "leave_role": leaves_role
             }
-            self.leaves_config.insert_one(new_record)   
+            await self.leaves_config.insert_one(new_record)   
             
 
         
@@ -102,7 +101,7 @@ class LeavesModuleSelection(discord.ui.View):
         from Cogs.Commands.Config.Modules.view import GlobalFinishedButton
         self.add_item(GlobalFinishedButton(ctx=self.ctx, message=self.message))
         
-        
+    
         
 
         

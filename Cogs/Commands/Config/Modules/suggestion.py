@@ -1,15 +1,13 @@
 import discord
 import pymongo
-from pymongo import MongoClient
 from Util.Yaml import Load_yaml
 
 import discord
 from discord.ext import commands
-from pymongo import MongoClient
 
 import discord
 from discord.ext import commands
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 
 class SuggestionChannel(discord.ui.ChannelSelect):
     def __init__(self, ctx, message):
@@ -18,7 +16,7 @@ class SuggestionChannel(discord.ui.ChannelSelect):
         self.message = message
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.db = self.cluster[self.config["collections"]["suggestion"]["database"]]
         self.suggestion_config = self.db[self.config["collections"]["suggestion"]["config"]]
 
@@ -35,10 +33,10 @@ class SuggestionChannel(discord.ui.ChannelSelect):
         
         suggestion_channel = int(self.values[0].id)
 
-        existing_config = self.suggestion_config.find_one({"guild_id": guild_id})
+        existing_config = await self.suggestion_config.find_one({"guild_id": guild_id})
 
         if existing_config:
-            self.suggestion_config.update_one(
+            await self.suggestion_config.update_one(
                 {"guild_id": guild_id},
                 {"$set": {"suggestion_channel": suggestion_channel}}
             )
@@ -48,7 +46,7 @@ class SuggestionChannel(discord.ui.ChannelSelect):
                 "guild_id": guild_id,
                 "suggestion_channel": suggestion_channel
             }
-            self.suggestion_config.insert_one(new_record)
+            await self.suggestion_config.insert_one(new_record)
             
             
         return await self.message.edit(

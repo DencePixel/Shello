@@ -2,7 +2,7 @@ from discord.ext import commands
 from discord import Color
 import discord
 from Util.Yaml import Load_yaml
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 
 class DesignerRole(discord.ui.RoleSelect):
     def __init__(self, ctx, designer_role):
@@ -40,28 +40,13 @@ class DesignerRole(discord.ui.RoleSelect):
         print(self.designer_role_id)
         await interaction.response.defer()
 
-class StaffTeamRole(discord.ui.RoleSelect):
-    def __init__(self, ctx, staff_role):
-        self.staff_role_id = staff_role
-        self.ctx = ctx
-
-        super().__init__(placeholder="Select a staff role", max_values=1, min_values=1, row=2)
-
-    async def callback(self, interaction: discord.Interaction):
-        if self.ctx.author.id != interaction.user.id:
-            embed = discord.Embed(description="This is not your panel!", color=discord.Color.dark_embed())
-            embed.set_author(icon_url=interaction.user.display_avatar.url)
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
-
-        self.staff_role_id = int(self.values[0].id)
-        await interaction.response.defer()
 
 class DesignLogChannel(discord.ui.ChannelSelect):
     def __init__(self, ctx, design_channel):
         self.designer_log_channel = design_channel
         self.ctx = ctx
 
-        super().__init__(placeholder="Select a design log channel", max_values=1, min_values=1, row=3)
+        super().__init__(placeholder="Select a design log channel", max_values=1, min_values=1, row=4)
 
     async def callback(self, interaction: discord.Interaction):
         if self.ctx.author.id != interaction.user.id:
@@ -78,24 +63,25 @@ class DesignView(discord.ui.View):
         self.config = None
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.design_Db = self.cluster[self.config["collections"]["design"]["database"]]
         self.design_config = self.design_Db[self.config["collections"]["design"]["config_collection"]]
         self.message = message
         self.ctx = ctx
         self.designer_role_id = None
         self.designer_log_channel = None
+        self.management_role = None
         self.staff_role = None
         self.designer_role_view = DesignerRole(ctx=self.ctx, designer_role=self.designer_role_id)
-        self.staff_role_view = StaffTeamRole(ctx=self.ctx, staff_role=self.staff_role)
+
         self.design_log_channel_view = DesignLogChannel(ctx=ctx, design_channel=self.designer_log_channel)
         self.add_item(item=self.designer_role_view)
-        self.add_item(item=self.staff_role_view)
         self.add_item(item=self.design_log_channel_view)
+        self.add_item(item=self.management_role_view)
 
         
 
-    @discord.ui.button(label="Save Data", row=4)
+    @discord.ui.button(label="Save Data", row=5)
     async def button_func(self, interaction: discord.Interaction, button: discord.Button):
         if self.ctx.author.id != interaction.user.id:
             embed = discord.Embed(description="This is not your panel!", color=discord.Color.dark_embed())
@@ -112,31 +98,27 @@ class DesignView(discord.ui.View):
 
         design_log_channel = self.design_log_channel_view.designer_log_channel
         staff_role = self.staff_role_view.staff_role_id
+        managemented_role = self.management_role_view.management_role_id
 
         if design_log_channel:
             log_channel_text = f"<#{design_log_channel}>"
         else:
             log_channel_text = "No Design Log Channel selected"
             design_log_channel = 0
-        
-        if staff_role:
-            staff_role_text = f"<@&{staff_role}>"
-        else:
-            staff_role_text = "No staff role selected"
+
         
 
         data = {
             "guild_id": interaction.guild.id,
             "designer_role_id": designer_role,
-            "staff_role_id": staff_role,
             "designer_log_channel_id": design_log_channel
         }
 
         filter = {"guild_id": interaction.guild.id}
-        self.design_config.update_one(filter, {"$set": data}, upsert=True)
+        await self.design_config.update_one(filter, {"$set": data}, upsert=True)
 
         confirmation_embed = discord.Embed(
-            description=f"Data saved successfully!\n\n``>`` Designer Role: {designer_role_text}\n``>`` Staff Role: {staff_role_text}\n``>`` Design Log Channel: {log_channel_text}",
+            description=f"Data saved successfully!\n\n``>`` Designer Role: {designer_role_text}\n``>`` Design Log Channel: {log_channel_text}",
             color=discord.Color.green())
         
         from Cogs.Commands.Config.Modules.view import GlobalFinishedButton

@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 import aiohttp
-import pymongo
-from Util.functions import replace_variable_welcome
+import motor.motor_asyncio
+import asyncio
+from Util.helpers import replace_variable_welcome
 
 from Util.Yaml import Load_yaml
 load_dotenv()
@@ -33,6 +34,20 @@ class Join(commands.Cog):
             embed = discord.Embed(description=f"``>`` {guild.name}\n``>`` {guild.id}\n``>`` {guild.owner.mention}\n``>`` {guild.member_count}", color=discord.Color(2829617))
             webhook = discord.Webhook.from_url(os.getenv("BOT_JOINS_WEBHOOK"), session=session)
             await webhook.send(embed=embed)
+            
+    @commands.Cog.listener()
+    async def on_command(self, ctx):
+        await asyncio.sleep(2)
+        guild = self.client.get_guild(1160173970675486760)
+        channel = guild.get_channel(1189990414267187241)
+        if os.getenv("ENVIORMENT") == "production":
+            message = await channel.fetch_message(1189990627690168451)
+        else:
+            message = await channel.fetch_message(1189992598702657567)
+        count = sum(1 for char in message.content if char.isdigit())
+        new_count = count + 1
+        return await message.edit(content=f"{new_count} total commands run")
+    
         
 
 
@@ -50,8 +65,12 @@ class Join(commands.Cog):
             role = guild.get_role(1160175200927752222)
             if role:
                 if role in guild_member.roles:
-                    view = discord.ui.View()
-                    view.add_item(StaffJoinedButton())
+                    if os.getenv("staffjoinedbutton") is True:
+                        
+                        view = discord.ui.View()
+                        view.add_item(StaffJoinedButton())
+                    else: 
+                        view=None
                     
                 else:
                     view = None
@@ -62,7 +81,7 @@ class Join(commands.Cog):
             view = None
         
 
-        cluster = pymongo.MongoClient(self.mongo_uri)
+        cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
         db = cluster[self.config["collections"]["welcome"]["database"]]
         welcome_config = db[self.config["collections"]["welcome"]["collection"]]
         
@@ -70,7 +89,7 @@ class Join(commands.Cog):
         alertsconfig = alertsdb[self.config["collections"]["Alerts"]["config"]]
         alertslogs = alertsdb[self.config["collections"]["Alerts"]["logs"]]
 
-        config = welcome_config.find_one({"guild_id": guild_id})
+        config = await welcome_config.find_one({"guild_id": guild_id})
         if config is None:
             return
 
@@ -115,18 +134,18 @@ class Join(commands.Cog):
                         pass
                     
         
-        alerts_config = alertsconfig.find_one({"guild_id": guild_id})
+        alerts_config = await alertsconfig.find_one({"guild_id": guild_id})
         if not alerts_config:
             return
                   
         filter_criteria = {"target_id": member.id}
 
-        count = alertslogs.count_documents(filter_criteria)
+        count = await alertslogs.count_documents(filter_criteria)
         if count > 1:
             embed = discord.Embed(title=f"Suspicious Account", description=f"**Account Information**\n<:Shello_Right:1164269631062691880> **User:** {member.mention}\n<:Shello_Right:1164269631062691880> **ID:** {member.id}\n\n**Reason**\n<:Shello_Right:1164269631062691880> **Reason:** ``User exceeds normal amount of alert.``\n<:Shello_Right:1164269631062691880> **Alerts Count:** ``{count}``", color=discord.Color.light_embed())
             embed.set_footer(text=f"Suspicious Account Flagged")
             embed.set_thumbnail(url=member.display_avatar.url)
-            channel_id = alerts_config.get("alert_channel")
+            channel_id = await alerts_config.get("alert_channel")
             channel = member.guild.get_channel(channel_id)
             try:
                 await channel.send(embed=embed, content=f"<:Alert:1163094295314706552> I have flagged this account as suspicious.")

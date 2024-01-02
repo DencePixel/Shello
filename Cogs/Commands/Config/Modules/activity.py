@@ -1,15 +1,6 @@
 import discord
-import pymongo
-from pymongo import MongoClient
 from Util.Yaml import Load_yaml
-
-import discord
-from discord.ext import commands
-from pymongo import MongoClient
-
-import discord
-from discord.ext import commands
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 
 class ActivityChannel(discord.ui.ChannelSelect):
     def __init__(self, ctx, message):
@@ -18,7 +9,7 @@ class ActivityChannel(discord.ui.ChannelSelect):
         self.message = message
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.db = self.cluster[self.config["collections"]["design"]["database"]]
         self.design_config = self.db[self.config["collections"]["design"]["config_collection"]]
 
@@ -35,10 +26,10 @@ class ActivityChannel(discord.ui.ChannelSelect):
         
         activity_channel = int(self.values[0].id)
 
-        existing_config = self.design_config.find_one({"guild_id": guild_id})
+        existing_config = await self.design_config.find_one({"guild_id": guild_id})
 
         if existing_config:
-            self.design_config.update_one(
+            await self.design_config.update_one(
                 {"guild_id": guild_id},
                 {"$set": {"activity_channel": activity_channel}}
             )
@@ -57,7 +48,7 @@ class QuotaCreation(discord.ui.Modal):
         self.mongo_uri = None
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.db = self.cluster[self.config["collections"]["design"]["database"]]
         self.design_config = self.db[self.config["collections"]["design"]["config_collection"]]
         super().__init__(title=title)
@@ -83,10 +74,10 @@ class QuotaCreation(discord.ui.Modal):
             )
         weekly_quota = int(self.Message.value)
 
-        existing_config = self.design_config.find_one({"guild_id": guild_id})
+        existing_config = await self.design_config.find_one({"guild_id": guild_id})
 
         if existing_config:
-            self.design_config.update_one(
+            await self.design_config.update_one(
                 {"guild_id": guild_id},
                 {"$set": {"weekly_quota": weekly_quota}}
             )

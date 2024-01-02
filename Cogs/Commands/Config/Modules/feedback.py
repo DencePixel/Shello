@@ -2,14 +2,14 @@ from discord.ext import commands
 from discord import Color
 import discord
 from Util.Yaml import Load_yaml
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 
 class FeedbackChannel(discord.ui.ChannelSelect):
     def __init__(self, ctx, guild, message):
         self.ctx = ctx
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.design_db = self.cluster[self.config["collections"]["design"]["database"]]
         self.feedback_collection = self.design_db[self.config["collections"]["design"]["feedback_config"]]
         self.guild_id = guild.id
@@ -23,15 +23,15 @@ class FeedbackChannel(discord.ui.ChannelSelect):
 
         self.feedback_channel = int(self.values[0].id)
         
-        existing_entry = self.feedback_collection.find_one({"guild_id": self.guild_id})
+        existing_entry = await self.feedback_collection.find_one({"guild_id": self.guild_id})
 
         if existing_entry:
-            self.feedback_collection.update_one(
+            await self.feedback_collection.update_one(
                 {"guild_id": self.guild_id},
                 {"$set": {"feedback_channel": self.feedback_channel}}
             )
         else:
-            self.feedback_collection.insert_one(
+            await self.feedback_collection.insert_one(
                 {"guild_id": self.guild_id, "feedback_channel": self.feedback_channel}
             )
 

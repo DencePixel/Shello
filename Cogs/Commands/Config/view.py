@@ -10,7 +10,6 @@ from Cogs.Commands.Config.Modules.suggestion import SuggestionChannel
 from Cogs.Commands.Config.Modules.customization import CustomizationModuleView
 from Cogs.Commands.Config.Modules.alerts import AlertsModuleSelection
 from Cogs.Commands.Config.Modules.leaves import LeavesModuleSelection
-from Cogs.Commands.Config.Modules.response import AutoresponderActionSelect
 
 class ModuleSelection(discord.ui.Select):
     def __init__(self, message, ctx):
@@ -94,15 +93,7 @@ class ModuleSelection(discord.ui.Select):
             
             await self.message.edit(view=LeavesModuleSelection(timeout=None, ctx=self.ctx, message=self.message), content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the LOA module.")
         
-        if self.values[0] == "response":
-            if interaction.user.id != self.ctx.author.id:
-                return
-            
-            
-            view = AutoresponderActionSelect(message=self.message, user=self.ctx)
-            await self.message.edit(embed=None, view=view, content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the autoresponder module.")
-            
-            
+
 
 class SelectView(discord.ui.View):
     def __init__(self, *, timeout = 180, ctx, message):

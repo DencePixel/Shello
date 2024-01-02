@@ -1,4 +1,7 @@
 import datetime
+import typing
+import discord
+from discord import Embed, InteractionResponse, Webhook
 import re
 
 async def replace_variable_welcome(message, replacements):
@@ -45,3 +48,26 @@ def convert_duration(duration_str):
         return datetime.datetime.now() + datetime.timedelta(hours=amount)
     else:
         raise ValueError("Invalid duration unit. Please use one of D, W, M, H, S, or MI.")
+    
+    
+async def interaction_check_failure(responder: InteractionResponse | Webhook | typing.Callable):
+    if isinstance(responder, typing.Callable):
+        responder = responder()
+
+    if isinstance(responder, InteractionResponse):
+        await responder.send_message(
+            embed=discord.Embed(
+                title="Unallowed",
+                description="You are not able to interact with these buttons.",
+                color=discord.Color.dark_embed()
+            ), ephemeral=True
+        )
+    else:
+        await responder.send(
+            embed=discord.Embed(
+                title="Unallowed",
+                description="You are not able to interact with these buttons.",
+                color=discord.Color.dark_embed()
+            )
+        )
+

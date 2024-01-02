@@ -1,22 +1,18 @@
-import discord
-import pymongo
-from pymongo import MongoClient
+
 from Util.Yaml import Load_yaml
 
-import discord
-from discord.ext import commands
-from pymongo import MongoClient
+
 
 import discord
 from discord.ext import commands
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 
 class CurrencyCreation(discord.ui.Modal):
     def __init__(self, title='Create a custom currency for your guild'):
         self.mongo_uri = None
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.db = self.cluster[self.config["collections"]["Customization"]["database"]]
         self.customization_config = self.db[self.config["collections"]["Customization"]["config_collection"]]
         super().__init__(title=title)
@@ -36,10 +32,10 @@ class CurrencyCreation(discord.ui.Modal):
         await interaction.response.defer()
         guild_id = interaction.guild_id
 
-        existing_config = self.customization_config.find_one({"guild_id": guild_id})
+        existing_config = await self.customization_config.find_one({"guild_id": guild_id})
 
         if existing_config:
-            self.customization_config.update_one(
+            await self.customization_config.update_one(
                 {"guild_id": guild_id},
                 {"$set": {"custom_currency": self.Message.value}}
             )
@@ -48,7 +44,7 @@ class CurrencyCreation(discord.ui.Modal):
                 "guild_id": guild_id,
                 "custom_currency": self.Message.value
             }
-            self.customization_config.insert_one(new_record)
+            await self.customization_config.insert_one(new_record)
 
         return await interaction.followup.send(
             content=f"<:Approved:1163094275572121661> **{interaction.user.display_name},** this server's custom currency has been set to **{self.Message.value}**!")

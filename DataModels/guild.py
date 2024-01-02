@@ -1,4 +1,4 @@
-import pymongo
+import motor.motor_asyncio
 import os
 from dotenv import load_dotenv
 from Util.Yaml import Load_yaml
@@ -14,7 +14,7 @@ class BaseGuild:
     def __init__(self):
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = pymongo.MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
         
 
         
@@ -27,13 +27,13 @@ class BaseGuild:
         Returns either the values or False
         """
         try:
-            connection = pymongo.MongoClient(self.mongo_uri)
+            connection = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
             db = connection[self.config["collections"]["design"]["database"]]
             design_config = db[self.config["collections"]["design"]["config_collection"]]
 
             guild_id = int(guild_id)
 
-            existing_record = design_config.find_one({"guild_id": guild_id})
+            existing_record = await design_config.find_one({"guild_id": guild_id})
 
             if existing_record:
                 return existing_record
@@ -55,7 +55,7 @@ class BaseGuild:
 
         self.payment_db = self.cluster[self.config["collections"]["payment"]["database"]]
         self.payment_config = self.payment_db[self.config["collections"]["payment"]["collection"]]
-        existing_record = self.payment_config.find_one({"guild_id": guild_id})
+        existing_record = await self.payment_config.find_one({"guild_id": guild_id})
 
         if existing_record:
             links = existing_record.get("links", {})
@@ -82,7 +82,7 @@ class BaseGuild:
                 "product": product,
                 "timestamp": datetime.datetime.utcnow()
             }
-            result = self.design_records.insert_one(record)
+            result = await self.design_records.insert_one(record)
             return result.inserted_id 
         except Exception as e:
             print(f"Error inserting design record: {e}")
@@ -96,13 +96,13 @@ class BaseGuild:
         """
 
         try:
-            connection = pymongo.MongoClient(self.mongo_uri)
+            connection = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
             db = connection[self.config["collections"]["design"]["database"]]
             feedback_collection = db[self.config["collections"]["design"]["feedback_config"]]
 
             guild_id = int(guild_id)
 
-            existing_record = feedback_collection.find_one({"guild_id": guild_id})
+            existing_record = await feedback_collection.find_one({"guild_id": guild_id})
 
             if existing_record:
                 return existing_record.get("feedback_channel")
@@ -122,13 +122,13 @@ class BaseGuild:
         """
 
         try:
-            connection = pymongo.MongoClient(self.mongo_uri)
+            connection = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
             db = connection[self.config["collections"]["suggestion"]["database"]]
             suggestion_config = db[self.config["collections"]["suggestion"]["config"]]
 
             guild_id = int(guild_id)
 
-            existing_record = suggestion_config.find_one({"guild_id": guild_id})
+            existing_record = await suggestion_config.find_one({"guild_id": guild_id})
 
             if existing_record:
                 return existing_record.get("suggestion_channel")
@@ -154,10 +154,10 @@ class BaseGuild:
                 "channel": channel,
                 "timestamp": datetime.datetime.utcnow()
             }
-            connection = pymongo.MongoClient(self.mongo_uri)
+            connection = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
             db = connection[self.config["collections"]["design"]["database"]]
             active_designs_collection = db[self.config["collections"]["design"]["active_designs_collection"]]
-            result = active_designs_collection.insert_one(record)
+            result = await active_designs_collection.insert_one(record)
             return order_id 
         except Exception as e:
             print(f"Error inserting active design record: {e}")
@@ -168,7 +168,7 @@ class BaseGuild:
             active_designs_collection = self.cluster[self.config["collections"]["design"]["database"]][self.config["collections"]["design"]["active_designs_collection"]]
 
             order_id_str = str(order_id)
-            result = active_designs_collection.find_one({"order_id": order_id_str})
+            result = await active_designs_collection.find_one({"order_id": order_id_str})
             return result
         except Exception as e:
             print("Error fetching active design:", e) 
@@ -179,7 +179,7 @@ class BaseGuild:
         try:
             currency_config = self.cluster[self.config["collections"]["Customization"]["database"]][self.config["collections"]["Customization"]["config_collection"]]
 
-            result = currency_config.find_one({"guild_id": guild})
+            result = await currency_config.find_one({"guild_id": guild})
             if result is None:
                 return "Robux"
             
@@ -194,7 +194,7 @@ class BaseGuild:
     async def fetch_design(self, order_id):
         try:
             log_designs_collection = self.cluster[self.config["collections"]["design"]["database"]][self.config["collections"]["design"]["log_collection"]]
-            return log_designs_collection.find_one({"order_id": order_id})
+            return await log_designs_collection.find_one({"order_id": order_id})
         except Exception as e:
             return None
         
@@ -204,14 +204,14 @@ class BaseGuild:
         Function for canceling an active design by order_id
         """
         try:
-            connection = pymongo.MongoClient(self.mongo_uri)
+            connection = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
             db = connection[self.config["collections"]["design"]["database"]]
             active_designs_collection = db[self.config["collections"]["design"]["active_designs_collection"]]
 
             order_id_str = str(order_id)
             query = {"order_id": order_id_str}
 
-            result = active_designs_collection.delete_one(query)
+            result = await active_designs_collection.delete_one(query)
 
             connection.close()
 

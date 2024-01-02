@@ -1,9 +1,10 @@
 from discord.ext import commands, tasks
 import discord
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 from DataModels.guild import BaseGuild
 from DataModels.user import BaseUser
 from Util.Yaml import Load_yaml
+from Cogs.emojis import space_emoji, denied_emoji, approved_emoji, right_Emoji
 from Util.paginator import Simple
 import asyncio
 import calendar
@@ -30,7 +31,7 @@ class QuotaCog(commands.Cog):
     def load_config(self):
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.payment_db = self.cluster[self.config["collections"]["payment"]["database"]]
         self.payment_config = self.payment_db[self.config["collections"]["payment"]["collection"]]
         self.design_Db = self.cluster[self.config["collections"]["design"]["database"]]
@@ -76,7 +77,7 @@ class QuotaCog(commands.Cog):
         if not weekly_quota:
             return
 
-        guild_design_records_cursor = self.design_records.find({"guild_id": guild.id, "accounted_for": {"$ne": True}})
+        guild_design_records_cursor = await self.design_records.find({"guild_id": guild.id, "accounted_for": {"$ne": True}})
         guild_design_records = list(guild_design_records_cursor)
         designers = [member for member in guild.members if designer_role in member.roles]
 
@@ -88,7 +89,7 @@ class QuotaCog(commands.Cog):
                                record["designer_id"] == designer.id]
             active_leaves = self.leaves_db[self.config["collections"]["Leaves"]["active"]]
             overall_leaves = self.leaves_db[self.config["collections"]["Leaves"]["overall"]]
-            loa_status = active_leaves.find_one(
+            loa_status = await active_leaves.find_one(
                 {"guild_id": guild.id, "author_id": designer.id, "status": "active"})
             if loa_status:
                 loa_overall_status = "True"
@@ -106,7 +107,7 @@ class QuotaCog(commands.Cog):
                 leaderboard_pages[-1].description += f"\n\n**User:** {designer.mention}\n**Passed:** ``True``\n" \
                                                     f"**On LOA:** ``{loa_overall_status}``"
                 update_operations.extend([
-                    self.design_records.update_one({"order_id": design_id, "accounted_for": {"$ne": True}},
+                    await self.design_records.update_one({"order_id": design_id, "accounted_for": {"$ne": True}},
                                                   {"$set": {"accounted_for": True}}) for design_id in designs_to_mark
                 ])
             else:
@@ -128,6 +129,7 @@ class QuotaCog(commands.Cog):
 
     @quota.command(name="leaderboard", description="See who has and who hasn't passed their quota")
     async def leaderboard(self, ctx: commands.Context):
+        await ctx.interaction.response.defer()
         guild = ctx.guild
         existing_record = await Base_Guild.fetch_design_config(guild.id)
         if not existing_record:
@@ -146,7 +148,7 @@ class QuotaCog(commands.Cog):
         if not weekly_quota:
             return
 
-        guild_design_records_cursor = self.design_records.find({"guild_id": guild.id, "accounted_for": {"$ne": True}})
+        guild_design_records_cursor = await self.design_records.find({"guild_id": guild.id, "accounted_for": {"$ne": True}})
         guild_design_records = list(guild_design_records_cursor)
         designers = [member for member in guild.members if designer_role in member.roles]
 
@@ -155,7 +157,7 @@ class QuotaCog(commands.Cog):
         for designer in designers:
             active_leaves = self.leaves_db[self.config["collections"]["Leaves"]["active"]]
             overall_leaves = self.leaves_db[self.config["collections"]["Leaves"]["overall"]]
-            loa_status = active_leaves.find_one(
+            loa_status = await active_leaves.find_one(
                 {"guild_id": guild.id, "author_id": designer.id, "status": "active"})
             if loa_status:
                 loa_overall_status = "True"
@@ -172,7 +174,7 @@ class QuotaCog(commands.Cog):
                 leaderboard_text = f"\n\n**User:** {designer.mention}\n**Passed:** ``False``\n" \
                                    f"**Designs Left:** ``{designs_needed}``\n**On LOA:** ``{loa_overall_status}``"
 
-            if len(leaderboard_text) + len(leaderboard_pages[-1].description) >= 2048:
+            if not leaderboard_pages or len(leaderboard_text) + len(leaderboard_pages[-1].description) >= 2048:
                 leaderboard_pages.append(discord.Embed(
                     title=f"{guild.name} Weekly Leaderboard",
                     color=discord.Color.light_embed(),
@@ -184,10 +186,10 @@ class QuotaCog(commands.Cog):
         for page in leaderboard_pages:
             paginator = Simple(channel=ctx.channel, timeout=120)
             await paginator.start(ctx, [page])
-
         
     @quota.command(name=f"user", description=f"See if you have passed the quota")
     async def user(self, ctx: commands.Context, user: discord.Member=None):
+        await ctx.interaction.response.defer()
         if user is None:
             user = ctx.author
         existing_record = await Base_Guild.fetch_design_config(ctx.guild.id)
@@ -207,29 +209,31 @@ class QuotaCog(commands.Cog):
         if not weekly_quota:
             return await ctx.send(f"<:Denied:1163095002969276456> **{ctx.author.name},** you need to set up the quota module.")
 
-        guild_design_records_cursor = self.design_records.find({"guild_id": ctx.guild.id, "accounted_for": {"$ne": True}})
+        guild_design_records_cursor = await self.design_records.find({"guild_id": ctx.guild.id, "accounted_for": {"$ne": True}})
         guild_design_records = list(guild_design_records_cursor)
         
         quota_embed = discord.Embed(
-            title=f"Quota Information for {user.display_name}", color=discord.Color.light_embed()
+            title=f"{user.display_name}'s activity.", color=discord.Color.light_embed(),
+            description=f""
         )
         quota_embed.set_footer(text=f"Activity Module")
-        quota_embed.set_author(icon_url=user.display_avatar.url, name=user.display_name)
+        quota_embed.set_thumbnail(url=user.display_avatar.url)
         active_leaves = self.leaves_db[self.config["collections"]["Leaves"]["active"]]
         overall_leaves = self.leaves_db[self.config["collections"]["Leaves"]["overall"]]
-        loa_status = active_leaves.find_one({"guild_id": ctx.guild.id,"author_id": user.id, "status": "active"})
+        loa_status = await active_leaves.find_one({"guild_id": ctx.guild.id,"author_id": user.id, "status": "active"})
         if loa_status:
-            loa_overall_status = "True"
+            loa_overall_status = "Active"
         else:
-            oa_overall_status = "False"
+            loa_overall_status = "Inactive"
 
         user_quota = sum(1 for record in guild_design_records if record["designer_id"] == user.id)
 
         if user_quota >= weekly_quota:
-            quota_embed.description += f"\n\n**User:** {user.mention}\n**Passed:** ``True``\n**On LOA:** {loa_overall_status}"
+            quota_embed.description += f"<:list:1188198482851405824> **Quota Information:**\n{space_emoji}{right_Emoji} **Passed:** ``True``\n{space_emoji}{right_Emoji} **LOA Status:** ``{loa_overall_status}``\n\n<:Badge:1163094257238806638> **User Information:**\n{space_emoji}{right_Emoji} **User:** {user.mention}\n{space_emoji}{right_Emoji} **User ID:** {user.id}"
         else:
             designs_needed = weekly_quota - user_quota
-            quota_embed.description += f"\n\n**User:** {user.mention}\n**Passed:** ``False``\n**Designs Left:** ``{designs_needed}``\n**On LOA:** {loa_overall_status}"
+            quota_embed.description += f"<:list:1188198482851405824> **Quota Information:**\n{space_emoji}{right_Emoji} **Passed:** ``False``\n{space_emoji}{right_Emoji} **LOA Status:** ``{loa_overall_status}``\n\n<:Badge:1163094257238806638> **User Information:**\n{space_emoji}{right_Emoji} **User:** {user.mention}\n{space_emoji}{right_Emoji} **User ID:** {user.id}"
+            quota_embed.set_footer(text=f"Designs Needed To Pass: {designs_needed}")
 
         await ctx.send(embed=quota_embed)
         

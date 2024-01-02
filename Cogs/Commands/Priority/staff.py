@@ -1,6 +1,5 @@
 import discord
-import pymongo
-from pymongo import MongoClient
+import motor.motor_asyncio
 from Util.Yaml import Load_yaml
 
 

@@ -5,7 +5,7 @@ from discord import app_commands
 from discord import Color
 import discord
 from discord.interactions import Interaction
-from pymongo import MongoClient
+import motor.motor_asyncio
 from DataModels.guild import BaseGuild
 import os
 from DataModels.user import BaseUser
@@ -22,10 +22,10 @@ class RefundModal(discord.ui.Modal):
     def __init__(self, question_name, title, question_placeholder, status, order_id):
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
              
         self.payment_db = self.cluster[self.config["collections"]["payment"]["database"]]
         self.payment_config = self.payment_db[self.config["collections"]["payment"]["collection"]]
@@ -55,7 +55,7 @@ class RefundModal(discord.ui.Modal):
                 f"<:shell_denied:1160456828451295232> **{interaction.user.display_name},** I can't find that Order!",
                 ephemeral=True)
         if self.status == "update":
-            refund_request = self.refund_records.find_one(
+            refund_request = await self.refund_records.find_one(
                 {"guild_id": interaction.guild.id, "order_id": self.order_id})
             if not refund_request:
                 return await interaction.response.send_message(
@@ -65,7 +65,7 @@ class RefundModal(discord.ui.Modal):
                 
                 
             await interaction.response.send_message(F"<:Approved:1163094275572121661> **{interaction.user.display_name},** succesfully updated the refund request.", ephemeral=True)
-            self.refund_records.update_one(
+            await self.refund_records.update_one(
                 {"guild_id": interaction.guild.id, "order_id": self.order_id},
                 {"$set": {"status": self.Message.value}}
             )
@@ -83,14 +83,14 @@ class RefundModal(discord.ui.Modal):
                                 content=f"<:Approved:1163094275572121661> **{customer.display_name},** the status for your refund request has changed!")
 
         elif self.status == "decline":
-            refund_request = self.refund_records.find_one(
+            refund_request = await self.refund_records.find_one(
                 {"guild_id": interaction.guild.id, "order_id": self.order_id})
             if not refund_request:
                 return await interaction.response.send_message(
                     content=f"<:Denied:1163095002969276456> **{interaction.user.display_name},** I can't find that refund request.",
                     ephemeral=True)
 
-            self.refund_records.delete_one({"guild_id": interaction.guild.id, "order_id": self.order_id})
+            await self.refund_records.delete_one({"guild_id": interaction.guild.id, "order_id": self.order_id})
             
             await interaction.response.send_message(F"<:Approved:1163094275572121661> **{interaction.user.display_name},** succesfully declined the refund request.", ephemeral=True)
             message_Embed = discord.Embed(
@@ -105,7 +105,7 @@ class RefundModal(discord.ui.Modal):
                                 content=f"<:Approved:1163094275572121661> **{customer.display_name},** your refund request has been declined.")
 
         elif self.status == "accept":
-            refund_request = self.refund_records.find_one(
+            refund_request = await self.refund_records.find_one(
                 {"guild_id": interaction.guild.id, "order_id": self.order_id})
             if not refund_request:
                 return await interaction.response.send_message(
@@ -117,7 +117,7 @@ class RefundModal(discord.ui.Modal):
             await interaction.response.send_message(F"<:Approved:1163094275572121661> **{interaction.user.display_name},** succesfully accepted the refund request.", ephemeral=True)
                 
                 
-            self.refund_records.delete_one({"guild_id": interaction.guild.id, "order_id": self.order_id})
+            await self.refund_records.delete_one({"guild_id": interaction.guild.id, "order_id": self.order_id})
 
             message_Embed = discord.Embed(
                 title=f"Refund Status", description="**Refund request accepted.**\n",
@@ -167,7 +167,7 @@ class RefundCog(commands.Cog):
         
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
              
         self.payment_db = self.cluster[self.config["collections"]["payment"]["database"]]
         self.payment_config = self.payment_db[self.config["collections"]["payment"]["collection"]]

@@ -5,7 +5,7 @@ from discord import app_commands
 from discord import Color
 import discord
 from discord.interactions import Interaction
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 from DataModels.guild import BaseGuild
 import os
 from DataModels.user import BaseUser
@@ -31,7 +31,7 @@ class AlertsCog(commands.Cog):
         self.client = client
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.alertsdb = self.cluster[self.config["collections"]["Alerts"]["database"]]
         self.alertsconfig = self.alertsdb[self.config["collections"]["Alerts"]["config"]]
         self.alertslogs = self.alertsdb[self.config["collections"]["Alerts"]["logs"]]
@@ -65,7 +65,7 @@ class AlertsCog(commands.Cog):
             return await message.edit(content=f"<:shell_denied:1160456828451295232> **{ctx.author.name},** you can't use this command.")
 
         try:
-            alerts_config = self.alertsconfig.find_one({"guild_id": guild_id})
+            alerts_config = await self.alertsconfig.find_one({"guild_id": guild_id})
             if not alerts_config:
                 return
                   
@@ -81,7 +81,7 @@ class AlertsCog(commands.Cog):
                 "reason": reason,
                 "alert_id": alert_id
             }
-            self.alertslogs.insert_one(record)
+            await self.alertslogs.insert_one(record)
             embed = discord.Embed(title=f"Alert Created", description=f"<:Shello_Right:1164269631062691880> **Moderator:** {ctx.author.mention}\n<:Shello_Right:1164269631062691880> **Target:** {user.mention}\n<:Shello_Right:1164269631062691880> **Reason:** {reason}", color=discord.Color.light_embed())
             embed.set_footer(text=f"ID: {alert_id}")
             await channel.send(embed=embed, content=f"<:Approved:1163094275572121661> **{ctx.author.display_name}** has submitted a new alert.")
@@ -108,7 +108,7 @@ class AlertsCog(commands.Cog):
         if staff_role not in ctx.author.roles:
             return await message.edit(content=f"<:Denied:1163095002969276456> **{ctx.author.name},** you can't use this command.")
         
-        query = self.alertslogs.find_one({"guild_id": ctx.guild.id, "alert_id": alert_id})
+        query = await self.alertslogs.find_one({"guild_id": ctx.guild.id, "alert_id": alert_id})
         if not query:
             return await message.edit(content=f"<:Denied:1163095002969276456> **{ctx.author.display_name},** I can't find that alert.")
         
@@ -138,7 +138,7 @@ class AlertsCog(commands.Cog):
         if staff_role not in ctx.author.roles:
             return await message.edit(content=f"<:Denied:1163095002969276456> **{ctx.author.name},** you can't use this command.")
         
-        query = self.alertslogs.find_one({"guild_id": ctx.guild.id, "alert_id": alert_id})
+        query = await self.alertslogs.find_one({"guild_id": ctx.guild.id, "alert_id": alert_id})
         if not query:
             return await message.edit(content=f"<:Denied:1163095002969276456> **{ctx.author.display_name},** I can't find that alert.")
         
@@ -149,8 +149,8 @@ class AlertsCog(commands.Cog):
         embed.set_author(icon_url=ctx.author.display_avatar.url, name=ctx.author.display_name)
         embed.set_footer(text=f"Succesfully deleted Alert {alert_id}")
         
-        self.alertslogs.delete_one(query)
-        alerts_config = self.alertsconfig.find_one({"guild_id": guild_id})
+        await self.alertslogs.delete_one(query)
+        alerts_config = await self.alertsconfig.find_one({"guild_id": guild_id})
         if not alerts_config:
             return
                   

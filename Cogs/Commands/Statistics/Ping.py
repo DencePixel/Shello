@@ -9,11 +9,8 @@ class PingCog(commands.Cog):
     @commands.hybrid_command(name='latency', description=f"Get the bot's latency")
     async def latency(self, ctx: commands.Context):
         message = await ctx.send(f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** calculating latency")
-        shard_id = ctx.guild.shard_id
-        shard = self.bot.get_shard(shard_id)
-        shard_ping = shard.latency
 
-        await message.edit(content=f'<:Approved:1163094275572121661> **{ctx.author.display_name},** my ping is **{shard_ping * 1000}ms**')
+        await message.edit(content=f'<:Approved:1163094275572121661> **{ctx.author.display_name},** my ping is **{round(self.bot.latency * 1000)}ms**')
 
 async def setup(bot):
     await bot.add_cog(PingCog(bot))

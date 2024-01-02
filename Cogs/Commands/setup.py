@@ -7,7 +7,7 @@ from discord import app_commands
 from discord import Color
 import discord
 from discord.ext import commands
-import pymongo
+import motor.motor_asyncio
 import discord.ext
 from Util.Yaml import Load_yaml
 from datetime import timedelta
@@ -36,7 +36,7 @@ class Config(commands.Cog):
         self.client = client
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = pymongo.MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
         
     @commands.hybrid_group(name="config", description=f"Config based commands")
     async def config(self, ctx):
@@ -83,12 +83,12 @@ class Config(commands.Cog):
         else:
             return await ctx.send(content=f"{denied_emoji} **{ctx.author.display_name},** invalid module specified.")
 
-        config_data = collection.find_one({"guild_id": ctx.guild.id})
+        config_data = await collection.find_one({"guild_id": ctx.guild.id})
         if config_data is None:
             return await ctx.send(content=f"{denied_emoji} **{ctx.author.display_name},** there is no configuration for this guild in the specified module.")
 
         try:
-            collection.delete_one({"guild_id": ctx.guild.id})
+            await collection.delete_one({"guild_id": ctx.guild.id})
             return await ctx.send(content=f"{approved_emoji} **{ctx.author.display_name},** I have successfully deleted the {module} config for this guild.")
         except:
             return await ctx.send(content=f"{denied_emoji} **{ctx.author.display_name},** I was unable to delete the {module} config for this guild.")

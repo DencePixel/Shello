@@ -1,6 +1,5 @@
 import discord
-import pymongo
-from pymongo import MongoClient
+import motor.motor_asyncio
 from Util.Yaml import Load_yaml
 
 
@@ -10,7 +9,7 @@ from Cogs.emojis import approved_emoji, alert_emoji, denied_emoji, space_emoji, 
 from discord.ext import commands, tasks
 from DataModels.guild import BaseGuild
 from roblox import Client
-from Util.functions import convert_duration
+from Util.helpers import convert_duration
 
 Base_Guild = BaseGuild()
 
@@ -24,7 +23,7 @@ class ExtendLoaModal(discord.ui.Modal):
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
 
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
         self.leaves_db = self.cluster[self.config["collections"]["Leaves"]["database"]]
         self.leaves_config = self.leaves_db[self.config["collections"]["Leaves"]["config"]]
         self.overall_leaves = self.leaves_db[self.config["collections"]["Leaves"]["overall"]]
@@ -55,7 +54,7 @@ class ExtendLoaModal(discord.ui.Modal):
             end_date = active_loa.get("end_date")
             new_end_timedelta = new_end_duration - end_date
             new_end = end_date + new_end_timedelta
-            self.active_leaves.update_one(
+            await self.active_leaves.update_one(
                 {"guild_id": guild_id, "author_id": self.author.id},
                 {"$set": {"end_date": new_end}}
             )
@@ -72,7 +71,7 @@ class LeaveAdminOptions(discord.ui.Select):
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
 
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
         self.leaves_db = self.cluster[self.config["collections"]["Leaves"]["database"]]
         self.leaves_config = self.leaves_db[self.config["collections"]["Leaves"]["config"]]
         self.overall_leaves = self.leaves_db[self.config["collections"]["Leaves"]["overall"]]
@@ -88,7 +87,7 @@ class LeaveAdminOptions(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         if self.original_author.id != interaction.user.id:
             return await interaction.response.send_message(f"{denied_emoji} **{interaction.user.display_name},** this is not your view.", ephemeral=True)
-        existing_record = self.leaves_config.find_one({"guild_id": interaction.guild.id})
+        existing_record = await self.leaves_config.find_one({"guild_id": interaction.guild.id})
         if not existing_record:
             return await interaction.response.send_message(content=f"{denied_emoji} **{interaction.user.display_name},** you need to setup the LOA module.", ephemeral=True)
 
@@ -99,12 +98,12 @@ class LeaveAdminOptions(discord.ui.Select):
         
         
         if self.values[0] == "end":
-            find = self.active_leaves.find_one({"guild_id": interaction.guild.id, "author_id": self.author.id})     
+            find = await self.active_leaves.find_one({"guild_id": interaction.guild.id, "author_id": self.author.id})     
             if not find:
                 return await interaction.response.send_message(content=f"{denied_emoji} **{interaction.user.display_name},** I could not find that users LOA.", ephemeral=True)
             
             user_id = find.get("author_id")
-            delete = self.active_leaves.delete_one(filter=find)
+            delete = await self.active_leaves.delete_one(filter=find)
             user = interaction.guild.get_member(user_id)
             if user:
                 user_embed = discord.Embed(title=f"Loa Ended Early", description=f"{interaction.user.mention} has ended your LOA early at **{interaction.guild.name}**.", color=discord.Color.red(), timestamp=discord.utils.utcnow())
@@ -133,7 +132,7 @@ class LeaveRequestButtons(discord.ui.View):
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
         
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
 
         
         
@@ -157,7 +156,7 @@ class LeaveRequestButtons(discord.ui.View):
             return await interaction.followup.send(content=f"{denied_emoji} **{interaction.user.display_name},** I can't find that LOA.")
         message_id = loa_info.get("message_id")
         requester_id = loa_info.get("author_id")
-        existing_record = self.leaves_config.find_one({"guild_id": interaction.guild.id})
+        existing_record = await self.leaves_config.find_one({"guild_id": interaction.guild.id})
         if not existing_record:
             return await interaction.followup.send(content=f"{denied_emoji} **{interaction.user.display_name},** you need to setup the LOA module.", ephemeral=True)
         channel_id = existing_record.get("loa_channel")
@@ -178,11 +177,11 @@ class LeaveRequestButtons(discord.ui.View):
         end_date = loa_info.get("end_date")
         timestamp_finish = discord.utils.format_dt(end_date, style="R")
         timestamp_start = discord.utils.format_dt(start_date, style="R")
-        overall_loas = int(self.overall_leaves.count_documents({"guild_id": interaction.guild.id, "author_id": requester_id}))
+        overall_loas = int(await self.overall_leaves.count_documents({"guild_id": interaction.guild.id, "author_id": requester_id}))
         embed = discord.Embed(title=f"Accepted LOA", description=f"**Requester Information:**\n{space_emoji}{right_Emoji}**User:** <@!{requester_id}>\n{space_emoji}{right_Emoji}**User ID:** {requester_id}\n{space_emoji}{right_Emoji}**User Leaves:** {overall_loas}\n\n**Loa Information:**\n{space_emoji}{right_Emoji} **Start Date:** {timestamp_start}\n{space_emoji}{right_Emoji} **End Date:** {timestamp_finish}\n{space_emoji}{right_Emoji} **Reason:** {reason}\n{space_emoji}{right_Emoji} **Accepted By:** {interaction.user.mention}", color=discord.Color.green())
         find_query = {"guild_id": interaction.guild.id, "author_id": requester_id, "message_id": message_id, "reason": reason, "start_date": start_date, "end_date": end_date, "status": "pending"}
         update_query = { "$set": { "status": "active" } }
-        self.active_leaves.update_one(find_query, update_query)
+        await self.active_leaves.update_one(find_query, update_query)
         for child in self.children:
             child.disabled = True
         member = interaction.guild.get_member(requester_id)
@@ -199,7 +198,7 @@ class LeaveRequestButtons(discord.ui.View):
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
         
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
 
         
         
@@ -218,11 +217,11 @@ class LeaveRequestButtons(discord.ui.View):
         designer_role = interaction.guild.get_role(designer_role_id)
         if staff_role not in interaction.user.roles:
             return await interaction.followup.send(content=f"{denied_emoji} **{interaction.user.display_name},** only staff members can use this.")
-        loa_info = self.active_leaves.find_one({"guild_id": interaction.guild.id, "message_id": interaction.message.id})
+        loa_info = await self.active_leaves.find_one({"guild_id": interaction.guild.id, "message_id": interaction.message.id})
         if not loa_info:
             return await interaction.followup.send(content=f"{denied_emoji} **{interaction.user.display_name},** I can't find that LOA.")
         message_id = loa_info.get("message_id")
-        existing_record = self.leaves_config.find_one({"guild_id": interaction.guild.id})
+        existing_record = await self.leaves_config.find_one({"guild_id": interaction.guild.id})
         if not existing_record:
             return await interaction.followup.send(content=f"{denied_emoji} **{interaction.user.display_name},** you need to setup the LOA module.", ephemeral=True)
         channel_id = existing_record.get("loa_channel")
@@ -236,10 +235,10 @@ class LeaveRequestButtons(discord.ui.View):
         end_date = loa_info.get("end_date")
         timestamp_finish = discord.utils.format_dt(end_date, style="R")
         timestamp_start = discord.utils.format_dt(start_date, style="R")
-        overall_loas = int(self.overall_leaves.count_documents({"guild_id": interaction.guild.id, "author_id": requester_id}))
+        overall_loas = int(await self.overall_leaves.count_documents({"guild_id": interaction.guild.id, "author_id": requester_id}))
         embed = discord.Embed(title=f"Denied LOA", description=f"**Requester Information:**\n{space_emoji}{right_Emoji}**User:** <@!{requester_id}>\n{space_emoji}{right_Emoji}**User ID:** {requester_id}\n{space_emoji}{right_Emoji}**User Leaves:** {overall_loas}\n\n**Loa Information:**\n{space_emoji}{right_Emoji} **Start Date:** {timestamp_start}\n{space_emoji}{right_Emoji} **End Date:** {timestamp_finish}\n{space_emoji}{right_Emoji} **Reason:** {reason}\n{space_emoji}{right_Emoji} **Denied By:** {interaction.user.mention}", color=discord.Color.red())
         find_query = {"guild_id": interaction.guild.id, "author_id": requester_id, "message_id": message_id, "reason": reason, "start_date": start_date, "end_date": end_date, "status": "pending"}
-        self.active_leaves.delete_one(find_query)
+        await self.active_leaves.delete_one(find_query)
         for child in self.children:
             child.disabled = True
         member = interaction.guild.get_member(requester_id)
@@ -259,7 +258,7 @@ class LoaCog(commands.Cog):
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
         
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
 
         
         
@@ -274,14 +273,14 @@ class LoaCog(commands.Cog):
     async def check_expired_loas(self):
         current_time = datetime.datetime.utcnow()
 
-        expired_loas = self.active_leaves.find({"end_date": {"$lte": current_time}, "status": "active"})
+        expired_loas = await self.active_leaves.find({"end_date": {"$lte": current_time}, "status": "active"})
 
         for loa in expired_loas:
             guild_id = loa["guild_id"]
             author_id = loa["author_id"]
             message_id = loa["message_id"]
             reason = loa["reason"]
-            config = self.leaves_config.find_one({"guild_id": guild_id})
+            config = await self.leaves_config.find_one({"guild_id": guild_id})
             if not config:
                 return
             main_guild = self.client.get_guild(guild_id)
@@ -294,14 +293,14 @@ class LoaCog(commands.Cog):
                         user.remove_roles(role)
                         
 
-            self.active_leaves.delete_one({"guild_id": guild_id, "author_id": author_id, "message_id": message_id})
-            self.overall_leaves.insert_one({"guild_id": guild_id, "author_id": author_id, "reason": reason})
+            await self.active_leaves.delete_one({"guild_id": guild_id, "author_id": author_id, "message_id": message_id})
+            await self.overall_leaves.insert_one({"guild_id": guild_id, "author_id": author_id, "reason": reason})
 
             guild = self.client.get_guild(guild_id)
             member = guild.get_member(author_id)
 
             if guild and member:
-                channel_id = self.leaves_config.find_one({"guild_id": guild_id})["loa_channel"]
+                channel_id = await self.leaves_config.find_one({"guild_id": guild_id})["loa_channel"]
                 if not channel_id:
                     return
                 channel = guild.get_channel(channel_id)
@@ -329,10 +328,10 @@ class LoaCog(commands.Cog):
     @loagroup.command(name="request", description="Manage your LOA")
     async def requestloa(self, ctx: commands.Context, duration: str, *, reason: str):
         message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** please wait while your request is processed.")
-        active_leave = self.active_leaves.find_one({"guild_id": ctx.guild.id, "author_id": ctx.author.id})
+        active_leave = await self.active_leaves.find_one({"guild_id": ctx.guild.id, "author_id": ctx.author.id})
         if active_leave:
             return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** you currently have an active LOA")
-        existing_record = self.leaves_config.find_one({"guild_id": ctx.guild.id})
+        existing_record = await self.leaves_config.find_one({"guild_id": ctx.guild.id})
         if not existing_record:
             return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** you need to setup the LOA module.")
         
@@ -346,7 +345,7 @@ class LoaCog(commands.Cog):
         if staff_role not in ctx.author.roles:
             print("only staff")
             return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** only staff members can use this.")
-        overall_loas = int(self.overall_leaves.count_documents({"guild_id": ctx.guild.id, "author_id": ctx.author.id}))
+        overall_loas = int(await self.overall_leaves.count_documents({"guild_id": ctx.guild.id, "author_id": ctx.author.id}))
         try:
             finish = convert_duration(duration)
         except:
@@ -360,7 +359,7 @@ class LoaCog(commands.Cog):
             return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** you need to setup a LOA channel.")
         discord_channel = ctx.guild.get_channel(channel)
         message2 = await discord_channel.send(embed=embed, view=LeaveRequestButtons())
-        self.active_leaves.insert_one({"guild_id": ctx.guild.id, "author_id": ctx.author.id, "status": "pending", "start_date": datetime.datetime.utcnow(), "end_date": finish, "reason": reason, "message_id": message2.id})
+        await self.active_leaves.insert_one({"guild_id": ctx.guild.id, "author_id": ctx.author.id, "status": "pending", "start_date": datetime.datetime.utcnow(), "end_date": finish, "reason": reason, "message_id": message2.id})
         return await message.edit(content=f"{approved_emoji} **{ctx.author.display_name},** I have succesfully posted your LOA request.")
     
     @loagroup.command(name=f"manage", description=f"Manage someones LOA")
@@ -376,7 +375,7 @@ class LoaCog(commands.Cog):
         staff_role = ctx.guild.get_role(staff_role_id)
         if staff_role not in ctx.author.roles:
             return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** you can't use this.")
-        loa_info = self.active_leaves.find_one({"guild_id": ctx.guild.id, "author_id": member.id, "status": "active"})
+        loa_info = await self.active_leaves.find_one({"guild_id": ctx.guild.id, "author_id": member.id, "status": "active"})
         if not loa_info:
             return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** this user does not have an active LOA.")
         requester_id = loa_info.get("author_id")
@@ -385,7 +384,7 @@ class LoaCog(commands.Cog):
         end_date = loa_info.get("end_date")
         timestamp_finish = discord.utils.format_dt(end_date, style="R")
         timestamp_start = discord.utils.format_dt(start_date, style="R")
-        overall_loas = int(self.overall_leaves.count_documents({"guild_id": ctx.guild.id, "author_id": requester_id}))
+        overall_loas = int(await self.overall_leaves.count_documents({"guild_id": ctx.guild.id, "author_id": requester_id}))
         dropdown = LeaveAdminOptions(author=member, original_user= ctx.author)
         view = discord.ui.View()
         view.add_item(dropdown)
@@ -406,7 +405,7 @@ class LoaCog(commands.Cog):
         staff_role = ctx.guild.get_role(staff_role_id)
         if staff_role not in ctx.author.roles:
             return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** you can't use this.")
-        loa_info = self.active_leaves.find_one({"guild_id": ctx.guild.id, "author_id": member.id, "status": "active"})
+        loa_info = await self.active_leaves.find_one({"guild_id": ctx.guild.id, "author_id": member.id, "status": "active"})
         if not loa_info:
             return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** this user does not have an active LOA.")
         requester_id = loa_info.get("author_id")

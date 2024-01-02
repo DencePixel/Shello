@@ -10,7 +10,7 @@ import random
 import roblox
 
 from roblox import Client
-from pymongo import MongoClient
+import motor.motor_asyncio
 
 from Util.Yaml import Load_yaml, initalize_yaml
 import string
@@ -38,7 +38,7 @@ class Done(discord.ui.View):
         self.interaction = interaction
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
         
 
 
@@ -47,7 +47,7 @@ class Done(discord.ui.View):
         if self.config is None:
             await self.initialize()
         mongo_uri = self.mongo_uri
-        cluster = MongoClient(mongo_uri)
+        cluster = motor.motor_asyncio.AsyncIOMotorClient(mongo_uri)
         db = cluster[self.config["collections"]["Roblox"]["database"]]
         verify_config = db[self.config["collections"]["Roblox"]["accounts_collection"]]
 
@@ -59,7 +59,7 @@ class Done(discord.ui.View):
                 "discord_user_id": str(self.interaction.user.id),
                 "roblox_user_id": user.id 
             }
-            verify_config.replace_one(
+            await verify_config.replace_one(
                 {"discord_user_id": str(self.interaction.user.id)},
                 user_data,
                 upsert=True
@@ -155,7 +155,7 @@ class ApprovedMen2u(discord.ui.View):
         super().__init__(timeout=None)
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
         self.message = message
         self.ctx=ctx
 

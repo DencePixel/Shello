@@ -74,7 +74,6 @@ class ErrorCog(commands.Cog):
         if isinstance(error, commands.NotOwner):
             return
         
-        
         error_id = random.randint(1, 99999999999)
         embed = discord.Embed(
             title=f"Oops!",

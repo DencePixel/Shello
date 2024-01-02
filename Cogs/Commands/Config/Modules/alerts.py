@@ -1,6 +1,6 @@
 import discord
 import pymongo
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 from Util.Yaml import Load_yaml
 
 class AlertsChannel(discord.ui.ChannelSelect):
@@ -8,7 +8,7 @@ class AlertsChannel(discord.ui.ChannelSelect):
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]  
         self.ctx = ctx
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.db = self.cluster[self.config["collections"]["Alerts"]["database"]]
         self.alerts_config = self.db[self.config["collections"]["Alerts"]["config"]]
 
@@ -25,14 +25,14 @@ class AlertsChannel(discord.ui.ChannelSelect):
         
         guild_id = interaction.guild.id
         
-        existing_record = self.alerts_config.find_one({"guild_id": guild_id})
+        existing_record = await self.alerts_config.find_one({"guild_id": guild_id})
         
         alert_channel = int(self.values[0].id)
 
 
         if existing_record:
             
-            self.alerts_config.update_one(
+            await self.alerts_config.update_one(
                 {"guild_id": guild_id},
                 {"$set": {"alert_channel": alert_channel}}
             )
@@ -41,7 +41,7 @@ class AlertsChannel(discord.ui.ChannelSelect):
                 "guild_id": guild_id,
                 "alert_channel": alert_channel
             }
-            self.alerts_config.insert_one(new_record)        
+            await self.alerts_config.insert_one(new_record)        
   
 
 

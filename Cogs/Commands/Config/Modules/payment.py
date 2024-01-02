@@ -1,5 +1,5 @@
 from discord.ui import Modal
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 import discord
 from Util.Yaml import Load_yaml
 
@@ -82,11 +82,11 @@ class PaymentLinkCreation(Modal):
         
         guild_id = interaction.guild_id
 
-        cluster = MongoClient(self.mongo_uri)
+        cluster = AsyncIOMotorClient(self.mongo_uri)
         db = cluster[self.config["collections"]["payment"]["database"]]
         design_config = db[self.config["collections"]["payment"]["collection"]]
 
-        existing_record = design_config.find_one({"guild_id": guild_id})
+        existing_record = await design_config.find_one({"guild_id": guild_id})
 
         if existing_record:
             links = existing_record.get("links", {})
@@ -96,7 +96,7 @@ class PaymentLinkCreation(Modal):
 
             links[title] = link
 
-            design_config.update_one({"guild_id": guild_id}, {"$set": {"links": links}})
+            await design_config.update_one({"guild_id": guild_id}, {"$set": {"links": links}})
 
         else:
             title = self.Title.value
@@ -105,28 +105,28 @@ class PaymentLinkCreation(Modal):
                 "guild_id": guild_id,
                 "links": {title: link}
             }
-            design_config.insert_one(payment_link)
+            await design_config.insert_one(payment_link)
 
             
             
 class PaymentLinkDeletion(discord.ui.Select):
-    def __init__(self, guild_id):
+    async def __init__(self, guild_id):
         super().__init__(placeholder='Select a payment link to delete', min_values=1, max_values=1, row=1)
         self.guild_id = guild_id
 
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
   
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.db = self.cluster[self.config["collections"]["payment"]["database"]]
         self.payment_config = self.db[self.config["collections"]["payment"]["collection"]]
 
         
-        existing_record = self.payment_config.find_one({"guild_id": guild_id})
+        existing_record = await self.payment_config.find_one({"guild_id": guild_id})
         links = existing_record.get("links", {}) if existing_record else {}
         
         if not links:
-            self.add_option(label='No link available', value='no_link')
+            self.add_option(label='No link available', value='https://shellobot.xyz')
         else:
             for i, (title, link) in enumerate(links.items()):
                 if i >= 25:
@@ -142,14 +142,14 @@ class PaymentLinkDeletion(discord.ui.Select):
 
 
 
-        existing_record = self.payment_config.find_one({"guild_id": self.guild_id})
+        existing_record = await self.payment_config.find_one({"guild_id": self.guild_id})
         links = existing_record.get("links", {}) if existing_record else {}
 
         if selected_value in links.values():
             selected_key = next(key for key, value in links.items() if value == selected_value)
             del links[selected_key]
 
-            self.payment_config.update_one({"guild_id": self.guild_id}, {"$set": {"links": links}})
+            await self.payment_config.update_one({"guild_id": self.guild_id}, {"$set": {"links": links}})
 
             await interaction.response.send_message(f"Payment link '{selected_key}' has been deleted from MongoDB.", ephemeral=True)
         else:

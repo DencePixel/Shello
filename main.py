@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from importlib import reload, import_module
 from Cogs.Events.Join import StaffJoinedButton
 from Cogs.Commands.Priority.leaves import LeaveRequestButtons
-from Util.paginator import Simple
+from Util.views import YesNoMenu
 
 load_dotenv()
 
@@ -30,7 +30,7 @@ class SHELLO(commands.AutoShardedBot):
         if code.lower() == "production":
             prefix = ">>"
         else:
-            prefix = ">"
+            prefix = ">>>"
         intents = discord.Intents.default()
         if code.lower() == "production":
             intents.members = True
@@ -66,7 +66,6 @@ class SHELLO(commands.AutoShardedBot):
             "Cogs.Commands.Priority.suggest",
             "Cogs.Commands.Priority.alerts",
             "Cogs.Commands.Priority.leaves",
-            "Cogs.Commands.Priority.giveaways",
             "Cogs.Events.message"
             ]
 
@@ -112,6 +111,7 @@ class SHELLO(commands.AutoShardedBot):
 
     async def on_disconnect(self):
         logging.info("Disconnected from Discord Gateway")
+
 
     async def change_prefix(self, ctx, new_prefix):
         config = Load_yaml()

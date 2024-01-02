@@ -5,6 +5,7 @@ from discord import app_commands
 from discord import Color
 import discord
 import datetime
+from motor import motor_asyncio
 from pymongo import MongoClient
 from DataModels.guild import BaseGuild
 import os
@@ -29,7 +30,7 @@ class FeedbackCog(commands.Cog):
         self.config = Load_yaml()  
         self.mongo_uri = self.config["mongodb"]["uri"]
         
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
 
         self.payment_db = self.cluster[self.config["collections"]["payment"]["database"]]
         self.payment_config = self.payment_db[self.config["collections"]["payment"]["collection"]]
@@ -62,7 +63,7 @@ class FeedbackCog(commands.Cog):
         message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** processing your request.")
         embed = discord.Embed(title=f"Reviewed by {ctx.author.display_name}", description=f"<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Rating:** **{rating}/5**\n<:Shello_Right:1164269631062691880> **Feedback:** {feedback}", color=discord.Color.light_embed())
         feedback_id = random.randint(1, 9999)
-        embed.set_footer(text=f"Feedback ID: {feedback_id} | Shello Systems")
+        embed.set_footer(text=f"Feedback ID: {feedback_id} | {os.getenv('SERVER_NAME')}")
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)       
         feedback_channel_id = await Base_Guild.get_feedback_channel(guild_id=ctx.guild.id)
         ctx.guild.member_count
@@ -90,13 +91,13 @@ class FeedbackCog(commands.Cog):
             "timestamp": datetime.datetime.utcnow(),
             "message_id": message.id 
         }
-        self.feedback_records.insert_one(feedback_data)
+        await self.feedback_records.insert_one(feedback_data)
         
         
     @feedback.command(name=f"view", description=f"View the feedback that you recieved")
     async def feedbackview(self, ctx: commands.Context, feedback_id: int):
         message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** fetching information for that feedback.")
-        refund_request = self.feedback_records.find_one(
+        refund_request = await self.feedback_records.find_one(
             {"guild_id": ctx.guild.id, "feedback_id": feedback_id}
         )
         

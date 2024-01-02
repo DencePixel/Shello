@@ -2,87 +2,22 @@ from discord.ext import commands
 import discord
 from discord.ui import View, button
 import random
-from pymongo import MongoClient
+import motor.motor_asyncio
 from Util.Yaml import Load_yaml
+from Cogs.emojis import approved_emoji, denied_emoji, right_Emoji, space_emoji
 from DataModels.guild import BaseGuild
 from DataModels.user import BaseUser
+from Util.views import YesNoMenu, CustomDropdown
 
 Base_User = BaseUser()
 Base_Guild = BaseGuild()
-
-
-class SuggestionButtons(View):
-    def __init__(self, client: commands.Bot):
-        super().__init__(timeout=None)
-        self.client = client
-        self.config = Load_yaml()
-        self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
-        self.suggestions_db = self.cluster[self.config["collections"]["suggestion"]["database"]]
-        self.suggestions_logs = self.suggestions_db[self.config["collections"]["suggestion"]["logs"]]
-
-    async def update_embed(self, interaction: discord.Interaction):
-        suggestion_data = self.suggestions_logs.find_one({"message_id": interaction.message.id})
-        if not suggestion_data:
-            return await interaction.followup.send(content=f"I can't find that suggestion.", ephemeral=True)
-        if suggestion_data:
-            embed = discord.Embed.from_dict(interaction.message.embeds[0].to_dict())
-            embed.description = f"{suggestion_data['suggestion']}\n\n{len(suggestion_data['voters'])} Upvotes | {suggestion_data['downvotes']} Downvotes"
-            await interaction.message.edit(embed=embed)
-
-    async def handle_vote(self, interaction: discord.Interaction, vote_type):
-        await interaction.response.defer()
-        suggestion_data = self.suggestions_logs.find_one({"message_id": interaction.message.id})
-        if not suggestion_data:
-            return await interaction.followup.send(content=f"I can't find that suggestion.", ephemeral=True)
-        if suggestion_data:
-            user_id = interaction.user.id
-            voters = suggestion_data.get("voters", [])
-            user_vote = next((voter for voter in voters if voter["user_id"] == user_id), None)
-
-            suggestion_data.setdefault("upvotes", 0)
-            suggestion_data.setdefault("downvotes", 0)
-
-            if user_vote:
-                suggestion_data[vote_type + "s"] -= 1
-                suggestion_data["voters"].remove(user_vote)
-                await self.update_embed(interaction)
-            else:
-                suggestion_data[vote_type + "s"] += 1
-                suggestion_data["voters"].append({"user_id": user_id, "vote_type": vote_type})
-                await self.update_embed(interaction)
-        else:
-            await interaction.followup.send("Suggestion not found.", ephemeral=True)
-
-    async def list_votes(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        suggestion_data = self.suggestions_logs.find_one({"message_id": interaction.message.id})
-        if not suggestion_data:
-            return await interaction.followup.send(content=f"I can't find that suggestion.", ephemeral=True)
-        voters = suggestion_data.get("voters", [])
-        vote_list = "\n".join([f"<@!{voter['user_id']}> - {voter['vote_type']}" for voter in voters])
-        embed = discord.Embed(title=f"Voters", description=vote_list, color=discord.Color.dark_embed())
-        await interaction.followup.send(embed=embed, ephemeral=True)
-
-    @button(label='Upvote', style=discord.ButtonStyle.green, custom_id='persistent_view:upvote', emoji='⬆️')
-    async def upvote(self, interaction: discord.Interaction, button: discord.Button):
-        await self.handle_vote(interaction, "upvote")
-
-    @button(label='Downvote', style=discord.ButtonStyle.red, custom_id='persistent_view:downvote', emoji='⬇️')
-    async def downvote(self, interaction: discord.Interaction, button: discord.Button):
-        await self.handle_vote(interaction, "downvote")
-
-    @button(label='List Votes', style=discord.ButtonStyle.gray, custom_id='persistent_view:listvotes', emoji='📜')
-    async def list_votes_button(self, interaction: discord.Interaction, button: discord.Button):
-        await self.list_votes(interaction)
-
 
 class SuggestionCog(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
-        self.cluster = MongoClient(self.mongo_uri)
+        self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
         self.suggestions_db = self.cluster[self.config["collections"]["suggestion"]["database"]]
         self.suggestions_logs = self.suggestions_db[self.config["collections"]["suggestion"]["logs"]]
 
@@ -92,27 +27,82 @@ class SuggestionCog(commands.Cog):
 
     @suggestion.command(name=f"create", description=f"Create a suggestion")
     async def createsuggest(self, ctx: commands.Context, *, suggestion: str):
-        message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** processing your request.")
+        message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** I am processing your request.")
         embed = discord.Embed(
-            title=f"Suggested by {ctx.author.display_name}", description=f"{suggestion}\n\n0 Upvotes | 0 Downvotes",
+            title=f"Suggested by {ctx.author.display_name}", description=f"{suggestion}",
             color=discord.Color.light_embed())
         feedback_channel_id = await Base_Guild.get_suggestion_channel(guild_id=ctx.guild.id)
         if feedback_channel_id is None:
             return await message.edit(
-                content=f"<:shell_denied:1160456828451295232> **{ctx.author.name},** the suggestion module has been incorrectly configured.")
+                content=f"{denied_emoji} **{ctx.author.name},** the suggestion module has been incorrectly configured.")
 
         await message.edit(content=f"<:Approved:1163094275572121661> **{ctx.author.display_name},** successfully sent your suggestion!")
 
         feedback_channel = ctx.guild.get_channel(feedback_channel_id)
         suggestion_data = {
-            "guild_id": ctx.guild.id, "message_id": None, "suggestion": suggestion, "upvotes": 0, "downvotes": 0,
-            "voters": [], "poster": ctx.author.id
-        }
+            "guild_id": ctx.guild.id, "message_id": None, "suggestion": suggestion,  "poster": ctx.author.id}
         message2 = await feedback_channel.send(embed=embed,
-                                              content=f"<:Approved:1163094275572121661> **{ctx.author.mention},** thank you for your suggestion!",
-                                              view=SuggestionButtons(client=self.client))
+                                              content=f"<:Approved:1163094275572121661> **{ctx.author.mention},** thank you for your suggestion!")
+        await message2.add_reaction("<:Approved:1163094275572121661>")
+        await message2.add_reaction("<:Denied:1163095002969276456>")
         suggestion_data["message_id"] = message2.id
-        self.suggestions_logs.insert_one(suggestion_data)
+        await self.suggestions_logs.insert_one(suggestion_data)
+        
+    @suggestion.command(name=f"find", description=f"Find a suggestion")
+    async def findsuggest(self, ctx: commands.Context, message_id: int):
+        message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** I am processing your request.")
+        record = await self.suggestions_logs.find_one({"message_id": message_id})
+        if not record:
+            return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** I can't find that suggestion.")
+        author_id = record.get("poster")
+        author = self.client.get_user(author_id)
+        if not author:
+            return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** the poster is not in my cache.")
+        suggestion = record.get("suggestion")
+        embed = discord.Embed(title=f"{author.display_name}'s suggestion", description=f"<:suggestion:1181708198521090189> **Suggestion Information:**\n{space_emoji}{right_Emoji} **Suggestion:** ``{suggestion}``\n{space_emoji}{right_Emoji} **Message ID:** ``{message_id}``\n\n<:Badge:1163094257238806638> **Poster Information:**\n{space_emoji}{right_Emoji} **Poster:** {author.mention}\n{space_emoji}{right_Emoji} **Poster ID:** ``{author.id}``", color=discord.Color.light_embed())
+        embed.set_thumbnail(url=author.display_avatar.url)
+        return await message.edit(content=f"{approved_emoji} **{ctx.author.display_name},** here is the requested suggestion.", embed=embed)
+    
+    @suggestion.command(name=f"revoke", description=f"Revoke a suggestion")
+    async def revokmesuggest(self, ctx: commands.Context, message_id: int):
+        message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** please wait while your request is processed.")
+        existing_record = await Base_Guild.fetch_design_config(guild_id=ctx.guild.id)
+        if not existing_record:
+            return await message.edit(content=f"<:Denied:1163095002969276456> **{ctx.author.name},** you need to set up the design module.")
+
+        staff_role_id = existing_record.get("staff_role_id")
+        staff_role = ctx.guild.get_role(staff_role_id)
+
+        if not staff_role:
+            return await message.edit(content=f"<:Denied:1163095002969276456> Staff role not found. Please check your configuration.")
+        
+        if staff_role not in ctx.author.roles:
+            return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** you can't use this.")
+        
+        find = await self.suggestions_logs.find_one({"guild_id": ctx.guild.id, "message_id": message_id})
+        if not find:
+            return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** I can't find that suggestion.")
+        
+        menu = YesNoMenu(ctx.author.id)
+        await message.edit(content=f"{right_Emoji} **{ctx.author.display_name},** do you want to continue?")
+        await menu.wait()
+        if menu.value is None:
+            return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** you didn't select a option.", view=None)
+        choice = "yes" if menu.value else "no"
+        if choice == "yes":
+            deletion = await self.suggestions_logs.delete_one({"guild_id": ctx.guild.id, "message_id": message_id})
+            if not deletion:
+                return await message.edit(content=f"{denied_emoji} **{ctx.author.display_name},** something went wrong.")
+            return await message.edit(
+                content=f"{approved_emoji} **{ctx.author.display_name},** I have succesfully revoked that suggestion."
+            )
+        
+        if choice == "no":
+            return await message.edit(
+                content=f"{approved_emoji} **{ctx.author.display_name},** I have canceled this operation."
+            )
+            
+   
 
 
 async def setup(client: commands.Bot) -> None:

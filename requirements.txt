@@ -1,10 +1,10 @@
+motor
 discord.py
 jishaku
 datetime
 typing
 requests
 asyncio
-motor
 better-ipc
 roblox
 python-dotenv

@@ -226,8 +226,9 @@ class QuotaCog(commands.Cog):
         else:
             loa_overall_status = "Inactive"
 
-        user_quota = sum(1 for record in guild_design_records if record["designer_id"] == user.id)
 
+        user_quota = sum(1 for record in guild_design_records if record["designer_id"] == user.id)
+        quota_embed.description = ""
         if user_quota >= weekly_quota:
             quota_embed.description += f"<:list:1188198482851405824> **Quota Information:**\n{space_emoji}{right_Emoji} **Passed:** ``True``\n{space_emoji}{right_Emoji} **LOA Status:** ``{loa_overall_status}``\n\n<:Badge:1163094257238806638> **User Information:**\n{space_emoji}{right_Emoji} **User:** {user.mention}\n{space_emoji}{right_Emoji} **User ID:** {user.id}"
         else:

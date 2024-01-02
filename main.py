@@ -105,28 +105,14 @@ class SHELLO(commands.AutoShardedBot):
 
         await self.load_jishaku()
     async def on_connect(self):
-        activity2 = discord.Activity(type=discord.ActivityType.playing, name="/config start || V1")
         logging.info("Connected to Discord Gateway!")
-        await self.change_presence(activity=activity2)
+        await self.change_presence(activity=discord.CustomActivity(name=os.getenv("BOT_ACTIVITY")))
+
 
     async def on_disconnect(self):
         logging.info("Disconnected from Discord Gateway")
 
 
-    async def change_prefix(self, ctx, new_prefix):
-        config = Load_yaml()
-        mongo_uri = self.config["mongodb"]["uri"]
-        prefixes_collection = pymongo.MongoClient(self.mongo_uri)
-
-        await prefixes_collection.update_one(
-            {"guild_id": ctx.guild.id},
-            {"$set": {"guild_id": ctx.guild.id, "prefix": new_prefix}},
-            upsert=True
-        )
-
-        self.guild_prefixes[ctx.guild.id] = new_prefix
-
-        await self.process_commands(ctx.message)
 
     def get_last_modified(self, cog):
         cog_file = f"{cog.replace('.', '/')}.py"

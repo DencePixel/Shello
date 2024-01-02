@@ -259,8 +259,6 @@ class LoaCog(commands.Cog):
         self.mongo_uri = self.config["mongodb"]["uri"]
         
         self.cluster = motor.motor_asyncio.AsyncIOMotorClient(self.mongo_uri)
-
-        
         
         self.leaves_db = self.cluster[self.config["collections"]["Leaves"]["database"]]
         self.leaves_config = self.leaves_db[self.config["collections"]["Leaves"]["config"]]
@@ -273,8 +271,8 @@ class LoaCog(commands.Cog):
     async def check_expired_loas(self):
         current_time = datetime.datetime.utcnow()
 
-        expired_loas = await self.active_leaves.find({"end_date": {"$lte": current_time}, "status": "active"})
-
+        cursor = self.active_leaves.find({"end_date": {"$lte": current_time}, "status": "active"})
+        expired_loas = await cursor.to_list(length=None)  
         for loa in expired_loas:
             guild_id = loa["guild_id"]
             author_id = loa["author_id"]
@@ -282,16 +280,16 @@ class LoaCog(commands.Cog):
             reason = loa["reason"]
             config = await self.leaves_config.find_one({"guild_id": guild_id})
             if not config:
-                return
+                continue
+
             main_guild = self.client.get_guild(guild_id)
-            role_id = config["leave_role"]
+            role_id = config.get("leave_role")
             if role_id:
-                role = main_guild.get_role()
+                role = main_guild.get_role(role_id)
                 if role:
                     user = main_guild.get_member(author_id)
                     if role in user.roles:
                         user.remove_roles(role)
-                        
 
             await self.active_leaves.delete_one({"guild_id": guild_id, "author_id": author_id, "message_id": message_id})
             await self.overall_leaves.insert_one({"guild_id": guild_id, "author_id": author_id, "reason": reason})
@@ -300,9 +298,14 @@ class LoaCog(commands.Cog):
             member = guild.get_member(author_id)
 
             if guild and member:
-                channel_id = await self.leaves_config.find_one({"guild_id": guild_id})["loa_channel"]
+                entry = await self.leaves_config.find_one({"guild_id": guild_id})
+                if not entry:
+                    continue
+
+                channel_id = entry.get("loa_channel")
                 if not channel_id:
-                    return
+                    continue
+
                 channel = guild.get_channel(channel_id)
                 message = await channel.fetch_message(message_id)
 
@@ -316,7 +319,6 @@ class LoaCog(commands.Cog):
                         
                     except Exception as e:
                         print(f"Error occurred when DMing the requester: {e}")
-
         
 
         

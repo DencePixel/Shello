@@ -21,7 +21,6 @@ class ModuleSelection(discord.ui.Select):
             discord.SelectOption(label="Payment",description="Configure the payment module.", value="Payment Links", emoji=f"<:payment:1177878137674145833>"),
             discord.SelectOption(label="Activity", description=f"Configure the activity module.", value=f"Quota", emoji=f"<:order_updated:1177327822721794058>"),
             discord.SelectOption(label="Welcome", description=f"Configure the welcome module.", value=f"Welcome", emoji=f"<:person_check:1178413964531609652>"),
-            discord.SelectOption(label=f"Suggestions", description=f"Configure the suggestions module.", value=f"Suggestions", emoji=f"<:suggestion:1181708198521090189>"),
             discord.SelectOption(label=f"Customization", description=f"Configure the customization module.", value=f"Customization", emoji=f"<:customization:1181651424627662868>"),
             discord.SelectOption(label=f"Alerts", description=f"Configure the alerts module.", emoji=f"<:Alert:1163094295314706552>", value=f"Alerts"),
             discord.SelectOption(label=f"Leaves", description=f"Configure the LOA module.", emoji=f"<:leaves:1184437355424251934>", value=f"leaves"),

@@ -4,9 +4,8 @@ datetime
 typing
 requests
 asyncio
-pymongo
+motor
 better-ipc
 roblox
 python-dotenv
-rollbar
 PyYaml

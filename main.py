@@ -36,6 +36,7 @@ class SHELLO(commands.AutoShardedBot):
             intents.members = True
             intents.message_content = False
             intents.presences = False
+            print("on motor")
             logging.info("Enabled Intents for Production")
         else:
             intents.members = True

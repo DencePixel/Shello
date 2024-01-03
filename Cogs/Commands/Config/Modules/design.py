@@ -46,7 +46,7 @@ class DesignLogChannel(discord.ui.ChannelSelect):
         self.designer_log_channel = design_channel
         self.ctx = ctx
 
-        super().__init__(placeholder="Select a design log channel", max_values=1, min_values=1, row=4)
+        super().__init__(placeholder="Select a design log channel", max_values=1, min_values=1, row=2)
 
     async def callback(self, interaction: discord.Interaction):
         if self.ctx.author.id != interaction.user.id:
@@ -77,11 +77,10 @@ class DesignView(discord.ui.View):
         self.design_log_channel_view = DesignLogChannel(ctx=ctx, design_channel=self.designer_log_channel)
         self.add_item(item=self.designer_role_view)
         self.add_item(item=self.design_log_channel_view)
-        self.add_item(item=self.management_role_view)
 
         
 
-    @discord.ui.button(label="Save Data", row=5)
+    @discord.ui.button(label="Save Data", row=3)
     async def button_func(self, interaction: discord.Interaction, button: discord.Button):
         if self.ctx.author.id != interaction.user.id:
             embed = discord.Embed(description="This is not your panel!", color=discord.Color.dark_embed())
@@ -97,8 +96,7 @@ class DesignView(discord.ui.View):
             designer_role = 0
 
         design_log_channel = self.design_log_channel_view.designer_log_channel
-        staff_role = self.staff_role_view.staff_role_id
-        managemented_role = self.management_role_view.management_role_id
+
 
         if design_log_channel:
             log_channel_text = f"<#{design_log_channel}>"

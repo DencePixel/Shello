@@ -3,6 +3,7 @@ import typing
 import discord
 from discord import Embed, InteractionResponse, Webhook
 import re
+from Cogs.emojis import approved_emoji, denied_emoji
 
 async def replace_variable_welcome(message, replacements):
     """Welcome Variable Function
@@ -55,19 +56,7 @@ async def interaction_check_failure(responder: typing.Union[InteractionResponse,
         responder = responder()
 
     if isinstance(responder, InteractionResponse):
-        await responder.send_message(
-            embed=discord.Embed(
-                title="Unallowed",
-                description="You are not able to interact with these buttons.",
-                color=discord.Color.dark_embed()
-            ), ephemeral=True
-        )
+        await responder.send_message(content=f"{denied_emoji} You can't use these buttons.")
     else:
-        await responder.send(
-            embed=discord.Embed(
-                title="Unallowed",
-                description="You are not able to interact with these buttons.",
-                color=discord.Color.dark_embed()
-            )
-        )
+        await responder.send(content=f"{denied_emoji} You can't use these buttons.")
 

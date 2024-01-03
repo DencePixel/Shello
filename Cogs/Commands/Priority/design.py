@@ -141,7 +141,7 @@ class ContributeModal(discord.ui.Modal):
             await designer_channel.send(embed=info_embed, content=f"<:Approved:1163094275572121661> cancelled by **{interaction.user.mention}**")
 
 class DesignFinishedOptions(discord.ui.Select):
-    async def __init__(self, author, order_id, guild_id, **kwargs):
+    def __init__(self, author, order_id, guild_id, **kwargs):
         self.author = author
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
@@ -150,7 +150,11 @@ class DesignFinishedOptions(discord.ui.Select):
         self.guild_id = guild_id
         super().__init__(placeholder='Please select a payment link.', min_values=1, max_values=1, **kwargs)
 
+    @classmethod
+    async def create(cls, author, order_id, guild_id, **kwargs):
+        self = cls(author, order_id, guild_id, **kwargs)
         await self.fetch_payment_links()
+        return self
 
     async def fetch_payment_links(self):
         payment_db = self.cluster[self.config["collections"]["payment"]["database"]]
@@ -173,14 +177,13 @@ class DesignFinishedOptions(discord.ui.Select):
         product = data["product"]
         designer = interaction.guild.get_member(data["designer_id"])
         customer = interaction.guild.get_member(data["customer_id"])
-        embed = discord.Embed(title=f"Order Finished",color=discord.Color.light_embed() ,description=f"The following order has been marked as finished.\n\n**Order {self.order_id}**\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Product:** {product}\n<:Shello_Right:1164269631062691880> **Price:** {price}", timestamp=discord.utils.utcnow())
+        embed = discord.Embed(title=f"Order Finished", color=discord.Color.light_embed(), description=f"The following order has been marked as finished.\n\n**Order {self.order_id}**\n<:Shello_Right:1164269631062691880> **Customer:** {customer.mention}\n<:Shello_Right:1164269631062691880> **Designer:** {designer.mention}\n<:Shello_Right:1164269631062691880> **Product:** {product}\n<:Shello_Right:1164269631062691880> **Price:** {price}", timestamp=discord.utils.utcnow())
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
-        message = await order_channel.send(embed=embed, content=f"<:Approved:1163094275572121661> **{customer.mention},** please pay for your design.")      
+        message = await order_channel.send(embed=embed, content=f"<:Approved:1163094275572121661> **{customer.mention},** please pay for your design.")
         view = discord.ui.View(timeout=None)
-        item = discord.ui.Button(style=discord.ButtonStyle.gray, label="Pay Here", url=selected_value) 
+        item = discord.ui.Button(style=discord.ButtonStyle.gray, label="Pay Here", url=selected_value)
         view.add_item(OrderPaidButton(message=message, order_id=self.order_id, author=self.author))
         view.add_item(item)
-
         await message.edit(view=view)
     
 class DesignContributionOptions(discord.ui.Select):
@@ -216,9 +219,9 @@ class DesignContributionOptions(discord.ui.Select):
             
         elif self.values[0] == "finish":
             view = discord.ui.View()
-            view.add_item(DesignFinishedOptions(author=self.author, guild_id=interaction.guild.id, order_id=self.order_id))
+            design_finished_options = await DesignFinishedOptions.create(author=self.author, order_id=self.order_id, guild_id=interaction.guild.id)
+            view.add_item(design_finished_options)
             await interaction.response.send_message(view=view, ephemeral=True, content=f"<:Approved:1163094275572121661> **{interaction.user.display_name},** please choose a payment link!")
-            
             
             
             

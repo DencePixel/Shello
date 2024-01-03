@@ -108,30 +108,33 @@ class PaymentLinkCreation(Modal):
             await design_config.insert_one(payment_link)
 
             
-            
 class PaymentLinkDeletion(discord.ui.Select):
-    async def __init__(self, guild_id):
+    def __init__(self, guild_id):
         super().__init__(placeholder='Select a payment link to delete', min_values=1, max_values=1, row=1)
         self.guild_id = guild_id
-
         self.config = Load_yaml()
         self.mongo_uri = self.config["mongodb"]["uri"]
-  
+
         self.cluster = AsyncIOMotorClient(self.mongo_uri)
         self.db = self.cluster[self.config["collections"]["payment"]["database"]]
         self.payment_config = self.db[self.config["collections"]["payment"]["collection"]]
 
+    @classmethod
+    async def from_gateway(cls, guild_id):
+        self = cls(guild_id)
         
         existing_record = await self.payment_config.find_one({"guild_id": guild_id})
         links = existing_record.get("links", {}) if existing_record else {}
-        
+
         if not links:
-            self.add_option(label='No link available', value='https://shellobot.xyz')
+            self.add_option(label='No link available', value='no_link')
         else:
             for i, (title, link) in enumerate(links.items()):
                 if i >= 25:
                     break
                 self.add_option(label=title, value=link)
+
+        return self
 
     async def callback(self, interaction: discord.Interaction):
         selected_value = self.values[0]
@@ -139,8 +142,6 @@ class PaymentLinkDeletion(discord.ui.Select):
         if selected_value == 'no_link':
             await interaction.response.send_message("There are no payment links available to delete.", ephemeral=True)
             return
-
-
 
         existing_record = await self.payment_config.find_one({"guild_id": self.guild_id})
         links = existing_record.get("links", {}) if existing_record else {}
@@ -150,7 +151,6 @@ class PaymentLinkDeletion(discord.ui.Select):
             del links[selected_key]
 
             await self.payment_config.update_one({"guild_id": self.guild_id}, {"$set": {"links": links}})
-
             await interaction.response.send_message(f"Payment link '{selected_key}' has been deleted from MongoDB.", ephemeral=True)
         else:
             await interaction.response.send_message("The selected payment link does not exist.", ephemeral=True)

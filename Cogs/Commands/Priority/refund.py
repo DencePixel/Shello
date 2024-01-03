@@ -8,11 +8,14 @@ from discord.interactions import Interaction
 import motor.motor_asyncio
 from DataModels.guild import BaseGuild
 import os
+from Cogs.emojis import approved_emoji, denied_emoji
 from DataModels.user import BaseUser
 import datetime
+import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 import random
+from Util.views import YesNoMenu
 from Util.Yaml import Load_yaml
 
 Base_User = BaseUser()
@@ -83,6 +86,17 @@ class RefundModal(discord.ui.Modal):
                                 content=f"<:Approved:1163094275572121661> **{customer.display_name},** the status for your refund request has changed!")
 
         elif self.status == "decline":
+            await interaction.response.send_message(content=f"<a:Loading:1177637653382959184> **{interaction.user.display_name},** please wait while you're request is processed.", ephemeral=True)
+            view = YesNoMenu(user_id=interaction.user.id)
+            await interaction.edit_original_response(content=f"{approved_emoji} **{interaction.user.display_name},** would you like to continue?", view=view)
+            try:
+                await view.wait()
+            except asyncio.TimeoutError:
+                return await interaction.edit_original_response(content=f"{denied_emoji} **{interaction.user.display_name},** this panel has expired.")
+                
+            if view.value is False:
+                return await interaction.edit_original_response(content=f"{approved_emoji} **{interaction.user.display_name},** I have canceled this operation.")
+
             refund_request = await self.refund_records.find_one(
                 {"guild_id": interaction.guild.id, "order_id": self.order_id})
             if not refund_request:
@@ -92,7 +106,7 @@ class RefundModal(discord.ui.Modal):
 
             await self.refund_records.delete_one({"guild_id": interaction.guild.id, "order_id": self.order_id})
             
-            await interaction.response.send_message(F"<:Approved:1163094275572121661> **{interaction.user.display_name},** succesfully declined the refund request.", ephemeral=True)
+            await interaction.edit_original_response(F"<:Approved:1163094275572121661> **{interaction.user.display_name},** succesfully declined the refund request.", ephemeral=True)
             message_Embed = discord.Embed(
                 title=f"Refund Status", description="**Refund request declined.**",
                 color=discord.Color.dark_embed())
@@ -210,7 +224,7 @@ class RefundCog(commands.Cog):
         price = order["price"]
         product = order["product"]
 
-        existing_refund = self.refund_records.find_one(
+        existing_refund = await self.refund_records.find_one(
             {"guild_id": ctx.guild.id, "requester_id": ctx.author.id}
         )
         if existing_refund:
@@ -225,7 +239,7 @@ class RefundCog(commands.Cog):
             "status": "Being Processed",
             "timestamp": datetime.datetime.utcnow(),
         }
-        self.refund_records.insert_one(refund_data)
+        await self.refund_records.insert_one(refund_data)
 
         await message.edit(content=f"<:Approved:1163094275572121661> **{ctx.author.display_name},** you can review your refund request with ``/refund status``")
 
@@ -246,7 +260,7 @@ class RefundCog(commands.Cog):
     @refundgroup.command(name="status", description="Check the status of an active refund request")
     async def refund_status(self, ctx: commands.Context, order_id: int):
         message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** fetching information for that refund request.")
-        refund_request = self.refund_records.find_one(
+        refund_request = await self.refund_records.find_one(
             {"guild_id": ctx.guild.id, "order_id": order_id}
         )
 
@@ -279,7 +293,7 @@ class RefundCog(commands.Cog):
     @refundgroup.command(name=f"admin", description=f"Manage a refund request")
     async def refundadmin(self, ctx: commands.Context, order_id: int):
         message = await ctx.send(content=f"<a:Loading:1177637653382959184> **{ctx.author.display_name},** fetching the refund request.")
-        refund_request = self.refund_records.find_one(
+        refund_request = await self.refund_records.find_one(
             {"guild_id": ctx.guild.id, "order_id": order_id}
         )
 

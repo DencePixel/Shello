@@ -40,32 +40,34 @@ class YesNoMenu(discord.ui.View):
 class CustomDropdown(discord.ui.Select):
     def __init__(self, user_id, options: list, limit=1):
         self.user_id = user_id
-        optionList = []
+        option_list = []
 
         for option in options:
             if isinstance(option, str):
-                optionList.append(
+                option_list.append(
                     discord.SelectOption(
                         label=option.replace("_", " ").title(), value=option
                     )
                 )
             elif isinstance(option, discord.SelectOption):
-                optionList.append(option)
+                option_list.append(option)
 
         super().__init__(
             placeholder="Select an option",
             min_values=1,
             max_values=limit,
-            options=optionList,
+            options=option_list,
         )
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id == self.user_id:
             await interaction.response.defer()
             if len(self.values) == 1:
-                self.view.value = self.values[0]
+                selected_value = self.values[0]
             else:
-                self.view.value = self.values
+                selected_value = self.values
+
+            self.view.value = selected_value
             self.view.stop()
         else:
             await interaction.response.defer(ephemeral=True, thinking=True)

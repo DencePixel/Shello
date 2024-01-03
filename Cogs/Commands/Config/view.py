@@ -10,12 +10,14 @@ from Cogs.Commands.Config.Modules.suggestion import SuggestionChannel
 from Cogs.Commands.Config.Modules.customization import CustomizationModuleView
 from Cogs.Commands.Config.Modules.alerts import AlertsModuleSelection
 from Cogs.Commands.Config.Modules.leaves import LeavesModuleSelection
+from Cogs.Commands.Config.Modules.permissions import PermissionsView
 
 class ModuleSelection(discord.ui.Select):
     def __init__(self, message, ctx):
         self.message = message
         self.ctx = ctx
         options=[
+            discord.SelectOption(label=f"Permissions", description=f"Configure the permissions module.", value=f"perms", emoji=f"<:permissions:1192029126668865576>"),
             discord.SelectOption(label="Designs",description="Configure the designs module.", value="Designs", emoji=f"<:design:1177878139611914321>"),
             discord.SelectOption(label="Feedback",description="Configure the feedback module.", value="Feedback", emoji=f"<:feedback:1177878141012803706>"),
             discord.SelectOption(label="Payment",description="Configure the payment module.", value="Payment Links", emoji=f"<:payment:1177878137674145833>"),
@@ -92,6 +94,15 @@ class ModuleSelection(discord.ui.Select):
                 return
             
             await self.message.edit(view=LeavesModuleSelection(timeout=None, ctx=self.ctx, message=self.message), content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the LOA module.")
+            
+        if self.values[0] == "perms":
+            if interaction.user.id != self.ctx.author.id:
+                return
+            
+            await self.message.edit(view=PermissionsView(ctx=self.ctx, message=self.message), content=f"{approved_emoji} **@{interaction.user.display_name},** you are now setting up the permissions module.")
+        
+
+
         
 
 
